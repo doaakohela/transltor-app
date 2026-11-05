@@ -1,3 +1,8 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React from 'react';
 import {
   Volume2,
@@ -23,6 +28,7 @@ interface NavbarProps {
   targetFlag: string;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
+  isAdmin?: boolean; // Hidden admin flag to protect extension controls
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,6 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   targetFlag,
   theme,
   onToggleTheme,
+  isAdmin = false,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 text-left">
@@ -101,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </nav>
 
-        {/* Action Buttons: Day/Night Toggle, High-Converting Sponsored Link & Chrome Extension */}
+        {/* Action Buttons: Day/Night Toggle, Sponsored Link & Admin-Protected Extension Button */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Day / Night Mode Toggle Icon */}
           <button
@@ -112,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ? 'bg-slate-900/90 hover:bg-slate-800 text-amber-300 border-slate-700/80 hover:border-amber-400/50'
                 : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 shadow-amber-500/10'
             }`}
-            title={theme === 'dark' ? 'Switch to Day Mode (الوضع النهاري)' : 'Switch to Night Mode (الوضع الليلي)'}
+            title={theme === 'dark' ? 'Switch to Day Mode' : 'Switch to Night Mode'}
             aria-label="Toggle Day / Night Mode"
           >
             {theme === 'dark' ? (
@@ -138,15 +145,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>🎁 Claim VIP Perks ↗</span>
           </a>
 
-          <button
-            onClick={onOpenExtensionModal}
-            className="px-3 py-2 text-xs font-semibold text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-800/80 rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:border-indigo-600 whitespace-nowrap cursor-pointer"
-            title="Download Chrome Extension (Manifest V3)"
-          >
-            <Puzzle className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Chrome Extension 🧩</span>
-            <span className="sm:hidden">Extension</span>
-          </button>
+          {/* Chrome Extension button rendered ONLY when Admin Mode is active */}
+          {isAdmin && (
+            <button
+              onClick={onOpenExtensionModal}
+              className="px-3 py-2 text-xs font-semibold text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-800/80 rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:border-indigo-600 whitespace-nowrap cursor-pointer"
+              title="Download Chrome Extension (Manifest V3)"
+            >
+              <Puzzle className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Chrome Extension 🧩</span>
+              <span className="sm:hidden">Extension</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenAddModal}
