@@ -402,7 +402,7 @@ export default function App() {
                 Admin Panel Mode
               </span>
               <p className="text-xs sm:text-sm text-slate-200 font-medium">
-                🔒 Admin mode active. Project controls are unlocked for you.
+                🔒 Admin mode active. Project controls and extension tools are unlocked.
               </p>
             </div>
             <div className="flex items-center gap-2.5 shrink-0">
@@ -467,6 +467,20 @@ export default function App() {
               <Sliders className="w-4 h-4 text-amber-400" />
               <span>Voice Settings</span>
             </button>
+
+            {isAdmin && (
+              <button
+                onClick={() => setCurrentView('extension')}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                  currentView === 'extension'
+                    ? 'bg-slate-800 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Puzzle className="w-4 h-4 text-amber-400" />
+                <span>Extension Manager</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -518,6 +532,21 @@ export default function App() {
             onUpdateSettings={handleUpdateSettings}
           />
         )}
+
+        {currentView === 'extension' && isAdmin && (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-4">
+            <h4 className="text-lg font-bold text-white">Google Chrome Extension Package (Admin Only)</h4>
+            <p className="text-xs text-slate-400 max-w-lg mx-auto">
+              Download the official Manifest V3 extension package. Hidden from public visitors.
+            </p>
+            <button
+              onClick={() => setIsExtensionModalOpen(true)}
+              className="px-5 py.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-400/20 hover:bg-amber-300 transition-all cursor-pointer"
+            >
+              Open Chrome Extension Manager
+            </button>
+          </div>
+        )}
       </main>
 
       <BulkImportModal
@@ -537,13 +566,15 @@ export default function App() {
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>Translate Words, Texts &amp; Convert to MP3 — All Rights Reserved</p>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsExtensionModalOpen(true)}
-              className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Puzzle className="w-3.5 h-3.5 text-amber-400" />
-              <span>Install Chrome Extension</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsExtensionModalOpen(true)}
+                className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Puzzle className="w-3.5 h-3.5 text-amber-400" />
+                <span>Install Chrome Extension (Admin)</span>
+              </button>
+            )}
           </div>
         </div>
       </footer>
