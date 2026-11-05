@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Pronounce Words, Texts & Convert to MP3",
+  "short_name": "Pronounce & MP3",
+  "version": "2.0.0",
+  "description": "Pronounce Words, Texts & Convert to MP3 in all world languages with 100% free lifetime studio voices and zero limits.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Pronounce Words, Texts & Convert to MP3",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://translate.googleapis.com/*",
+    "https://*/*",
+    "http://*/*"
+  ]
+}

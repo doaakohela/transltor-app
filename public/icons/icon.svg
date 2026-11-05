@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#grad)" />
+  <!-- Soundwaves and globe glyph -->
+  <circle cx="64" cy="64" r="38" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.3" />
+  <circle cx="64" cy="64" r="24" fill="#0f172a" />
+  <path d="M58 48 L72 56 L72 72 L58 80 Z" fill="#f59e0b" />
+  <path d="M78 54 C82 58 84 61 84 64 C84 67 82 70 78 74" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" />
+  <path d="M84 48 C90 53 94 58 94 64 C94 70 90 75 84 80" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+</svg>

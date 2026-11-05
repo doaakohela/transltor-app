@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/tts/speak",
+      "destination": "/api/tts/speak"
+    },
+    {
+      "source": "/api/tts/full-word",
+      "destination": "/api/tts/full-word"
+    },
+    {
+      "source": "/api/tts/batch-download",
+      "destination": "/api/tts/batch-download"
+    },
+    {
+      "source": "/api/translate",
+      "destination": "/api/translate"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

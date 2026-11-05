@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+.font-arabic {
+  font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.font-english {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom sound wave pulse animation */
+@keyframes soundwave {
+  0%, 100% { height: 6px; }
+  50% { height: 28px; }
+}
+
+.animate-wave-1 { animation: soundwave 1s ease-in-out infinite 0.1s; }
+.animate-wave-2 { animation: soundwave 1s ease-in-out infinite 0.25s; }
+.animate-wave-3 { animation: soundwave 1s ease-in-out infinite 0.4s; }
+.animate-wave-4 { animation: soundwave 1s ease-in-out infinite 0.2s; }
+.animate-wave-5 { animation: soundwave 1s ease-in-out infinite 0.35s; }
+
+/* =========================================================================
+   DAY MODE / LIGHT THEME STYLES (الوضع النهاري)
+   ========================================================================= */
+
+.light-theme {
+  color-scheme: light;
+}
+
+/* Page and Root Container */
+.light-theme body,
+.light-theme .min-h-screen {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Header & Navigation Bar */
+.light-theme header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+.light-theme header h1 {
+  color: #0f172a !important;
+}
+
+/* Main Surface Cards (Sections, Google Translate, Workstations, Tables) */
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-900\/95,
+.light-theme .bg-slate-900\/90,
+.light-theme .bg-slate-900\/80,
+.light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-900\/40 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Inner Well Backgrounds & Sub-panels */
+.light-theme .bg-slate-950,
+.light-theme .bg-slate-950\/90,
+.light-theme .bg-slate-950\/80,
+.light-theme .bg-slate-950\/70,
+.light-theme .bg-slate-950\/60,
+.light-theme .bg-slate-950\/50,
+.light-theme .bg-slate-950\/40 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Subtle Secondary Buttons, Pills, and Dividers */
+.light-theme .bg-slate-800,
+.light-theme .bg-slate-800\/80,
+.light-theme .bg-slate-800\/60,
+.light-theme .bg-slate-800\/50 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #1e293b !important;
+}
+
+.light-theme .hover\:bg-slate-800:hover,
+.light-theme .hover\:bg-slate-700:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Borders */
+.light-theme .border-slate-900,
+.light-theme .border-slate-800,
+.light-theme .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Typography Hierarchy in Light Mode */
+.light-theme .text-slate-100 {
+  color: #0f172a !important;
+}
+
+.light-theme .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.light-theme .text-slate-300 {
+  color: #334155 !important;
+}
+
+.light-theme .text-slate-400 {
+  color: #475569 !important;
+}
+
+.light-theme .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Selective text-white: override content text without breaking white text on saturated badges/buttons */
+.light-theme h1.text-white,
+.light-theme h2.text-white,
+.light-theme h3.text-white,
+.light-theme h4.text-white,
+.light-theme h5.text-white,
+.light-theme p.text-white,
+.light-theme td.text-white,
+.light-theme tr.text-white {
+  color: #0f172a !important;
+}
+
+/* Form inputs & Textareas */
+.light-theme textarea,
+.light-theme input[type="text"],
+.light-theme input[type="search"],
+.light-theme input[type="number"],
+.light-theme select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme textarea:focus,
+.light-theme input[type="text"]:focus,
+.light-theme input[type="search"]:focus {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15) !important;
+}
+
+.light-theme textarea::placeholder,
+.light-theme input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Google Translate Section in Day Mode */
+.light-theme .google-translate-card,
+.light-theme .google-translate-header {
+  background-color: #ffffff !important;
+}
+
+/* Flashcard 3D in Day Mode */
+.light-theme .perspective > div {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08) !important;
+}
+
+.light-theme .perspective h3 {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+/* Vocabulary Table in Day Mode */
+.light-theme table {
+  background-color: #ffffff !important;
+}
+
+.light-theme th {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+.light-theme tr {
+  border-bottom-color: #f1f5f9 !important;
+}
+
+.light-theme tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* High-Converting Partner Banner in Day Mode */
+.light-theme [class*="from-amber-500\/15"] {
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #eef2ff 100%) !important;
+  border-color: #fde68a !important;
+}
+
+.light-theme [class*="from-amber-500\/15"] p {
+  color: #1e293b !important;
+}
+
+/* Modals & Dialogs in Day Mode */
+.light-theme .fixed .bg-slate-900,
+.light-theme .fixed .bg-slate-950 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+}
+
+/* Footer in Day Mode */
+.light-theme footer {
+  border-top-color: #e2e8f0 !important;
+  background-color: #ffffff !important;
+  color: #64748b !important;
+}
+

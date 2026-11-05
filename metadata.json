@@ -1,0 +1,6 @@
+{
+  "name": "SpeakUS & Masry - Bilingual Pronunciation Trainer",
+  "description": "نطق الكلمات الإنجليزية بلكنة أمريكية مرتين وترجمتها بلكنة مصرية طبيعية مع إدخال مخصص وبطاقات تفاعلية",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
