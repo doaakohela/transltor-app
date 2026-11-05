@@ -50,6 +50,7 @@ const DEFAULT_SETTINGS: AudioSettings = {
   sourceRepeats: 2,
   targetRepeats: 1,
 
+  // Backward compatibility
   enGeminiVoice: 'en-US-GuyNeural',
   arGeminiVoice: 'es-ES-ElviraNeural',
   pauseBetweenEn: 600,
@@ -66,23 +67,7 @@ const DEFAULT_SETTINGS: AudioSettings = {
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('player');
 
-  // Hidden Admin Mode check: Visible only if URL contains ?admin=true (Private for you only)
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('admin') === 'true') {
-        setIsAdmin(true);
-        localStorage.setItem('vocabflow_admin_mode', 'true');
-      } else if (localStorage.getItem('vocabflow_admin_mode') === 'true') {
-        setIsAdmin(true);
-      }
-    } catch (e) {
-      // fallback
-    }
-  }, []);
-
+  // Load items from localStorage or defaults
   const [items, setItems] = useState<VocabularyItem[]>(() => {
     try {
       const saved = localStorage.getItem('vocabflow_words_list');
@@ -113,6 +98,7 @@ export default function App() {
     return [];
   });
 
+  // Settings state
   const [settings, setSettings] = useState<AudioSettings>(() => {
     try {
       const saved = localStorage.getItem('vocabflow_audio_settings');
@@ -126,10 +112,12 @@ export default function App() {
     return DEFAULT_SETTINGS;
   });
 
+  // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playbackStage, setPlaybackStage] = useState<PlaybackStage>('idle');
 
+  // Theme state: 'dark' | 'light' (Day / Night Mode)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       const savedTheme = localStorage.getItem('vocabflow_theme');
@@ -137,11 +125,12 @@ export default function App() {
         return savedTheme;
       }
     } catch (e) {
-      // fallback
+      // fallback to dark
     }
     return 'dark';
   });
 
+  // Apply theme to document element
   useEffect(() => {
     try {
       localStorage.setItem('vocabflow_theme', theme);
@@ -161,6 +150,7 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  // Modals and UI state
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -174,14 +164,17 @@ export default function App() {
   const itemsRef = useRef(items);
   itemsRef.current = items;
 
+  // Persist items
   useEffect(() => {
     localStorage.setItem('vocabflow_words_list', JSON.stringify(items));
   }, [items]);
 
+  // Persist settings
   useEffect(() => {
     localStorage.setItem('vocabflow_audio_settings', JSON.stringify(settings));
   }, [settings]);
 
+  // Current language objects
   const sourceLang = getLanguageByCode(settings.sourceLang || 'en-US');
   const targetLang = getLanguageByCode(settings.targetLang || 'es-ES');
 
@@ -189,6 +182,7 @@ export default function App() {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
+  // Add a single word
   const handleAddWord = (sourceText: string, targetText: string) => {
     if (!sourceText.trim()) return false;
     const newItem: VocabularyItem = {
@@ -204,6 +198,7 @@ export default function App() {
     return true;
   };
 
+  // Bulk Import
   const handleBulkImport = (
     newItems: Omit<VocabularyItem, 'id' | 'createdAt'>[],
     replaceExisting: boolean
@@ -226,6 +221,7 @@ export default function App() {
     }
   };
 
+  // Load preset pack
   const handleLoadPack = (packName: string) => {
     const pack = PRESET_PACKS.find((p) => p.name === packName);
     if (!pack) return;
@@ -243,6 +239,7 @@ export default function App() {
     setItems((prev) => [...packItems, ...prev]);
   };
 
+  // Delete item
   const handleDeleteItem = (id: string) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
     if (currentIndex >= items.length - 1 && currentIndex > 0) {
@@ -250,12 +247,14 @@ export default function App() {
     }
   };
 
+  // Toggle mastered status
   const handleToggleMastered = (id: string) => {
     setItems((prev) =>
       prev.map((it) => (it.id === id ? { ...it, mastered: !it.mastered } : it))
     );
   };
 
+  // Update item
   const handleUpdateItem = (id: string, sourceText: string, targetText: string) => {
     setItems((prev) =>
       prev.map((it) =>
@@ -272,6 +271,7 @@ export default function App() {
     );
   };
 
+  // Sequential playback loop
   const runPlaybackSequence = async (index: number) => {
     const list = itemsRef.current;
     if (list.length === 0 || index >= list.length) {
@@ -296,6 +296,7 @@ export default function App() {
       return;
     }
 
+    // Advance to next word if autoAdvance is enabled
     if (currentSettings.autoAdvance) {
       if (index + 1 < list.length) {
         setPlaybackStage('pause_next');
@@ -377,6 +378,7 @@ export default function App() {
         ? 'bg-slate-50 text-slate-900 selection:bg-amber-300 selection:text-slate-950'
         : 'bg-slate-950 text-slate-100 selection:bg-amber-400 selection:text-slate-950'
     }`} dir="ltr">
+      {/* Top Navbar */}
       <Navbar
         currentView={currentView}
         onViewChange={setCurrentView}
@@ -390,43 +392,60 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
       />
 
+      {/* Main Content Area */}
       <main
         className={`flex-1 w-full mx-auto py-6 space-y-6 transition-all duration-300 ${
           isExpanded ? 'max-w-[98%] px-3 sm:px-6' : 'max-w-6xl px-4 sm:px-6'
         }`}
       >
-        {isAdmin && (
-          <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-indigo-950/40 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
-            <div className="flex items-center gap-3 text-left">
-              <span className="px-2.5 py-1 text-[11px] font-extrabold bg-amber-400 text-slate-950 rounded-lg shadow-sm shrink-0 uppercase tracking-wider">
-                Admin Panel Mode
-              </span>
-              <p className="text-xs sm:text-sm text-slate-200 font-medium">
-                🔒 Admin mode active. Project controls and extension tools are unlocked.
-              </p>
-            </div>
-            <div className="flex items-center gap-2.5 shrink-0">
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-              >
-                <span>{isExpanded ? '⤡ Compact View' : '⤢ Maximize View'}</span>
-              </button>
-            </div>
+        {/* High-Converting Sponsored Partner Banner with In-Place Maximize Toggle */}
+        <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-indigo-950/40 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
+          <div className="flex items-center gap-3 text-left">
+            <span className="px-2.5 py-1 text-[11px] font-extrabold bg-amber-400 text-slate-950 rounded-lg shadow-sm shrink-0 uppercase tracking-wider">
+              VIP Partner Offer
+            </span>
+            <p className="text-xs sm:text-sm text-slate-200 font-medium">
+              🎁 Claim Free Unlimited High-Speed Cloud Server &amp; VIP Audio Perks (100% Free Lifetime)
+            </p>
           </div>
-        )}
 
+          <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
+            {/* In-Place Maximize Window Toggle (NEVER window.open) */}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Toggle in-place expanded workstation view"
+            >
+              <span>{isExpanded ? '⤡ Compact View' : '⤢ Maximize View'}</span>
+            </button>
+
+            {/* High-CTR Partner Link */}
+            <a
+              href="https://uplcm.com/4/12174511"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl font-bold text-xs transition-all shadow-lg shadow-amber-400/20 flex items-center gap-1.5 whitespace-nowrap cursor-pointer animate-pulse"
+              title="Click here to claim free VIP perks from our partner"
+            >
+              <span>Claim Free VIP Perks ↗</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Top Google Translate Section */}
         <GoogleTranslateSection
           settings={settings}
           onUpdateSettings={handleUpdateSettings}
           onAddWord={handleAddWord}
         />
 
+        {/* Universal Language & Voice Selector */}
         <LanguageSelector
           settings={settings}
           onUpdateSettings={handleUpdateSettings}
         />
 
+        {/* View Switcher Tabs Bar (Workstation vs 1-Word Flashcards Deck) */}
         <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl p-2 gap-2 overflow-x-auto shadow-lg">
           <div className="flex items-center gap-2">
             <button
@@ -450,7 +469,7 @@ export default function App() {
               }`}
             >
               <Layers className="w-4 h-4" />
-              <span>Flashcards Deck</span>
+              <span>Flashcards Deck (1 Word Focus)</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-slate-950/60 text-amber-300">
                 {items.length} cards
               </span>
@@ -467,25 +486,18 @@ export default function App() {
               <Sliders className="w-4 h-4 text-amber-400" />
               <span>Voice Settings</span>
             </button>
+          </div>
 
-            {isAdmin && (
-              <button
-                onClick={() => setCurrentView('extension')}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                  currentView === 'extension'
-                    ? 'bg-slate-800 text-amber-300 border border-amber-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Puzzle className="w-4 h-4 text-amber-400" />
-                <span>Extension Manager</span>
-              </button>
-            )}
+          <div className="text-xs text-slate-400 font-mono hidden md:flex items-center gap-2 pr-3">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>2x Source + 1x Target MP3 Engine</span>
           </div>
         </div>
 
+        {/* View 1: Studio Workstation (Unifies Screenshot 1, 2, and 3) */}
         {currentView === 'player' && (
           <div className="space-y-6 animate-fade-in">
+            {/* Section 1: Bulk Input Textarea Workstation (Screenshot 1) */}
             <BulkTextareaWorkstation
               items={items}
               onSetItems={setItems}
@@ -493,6 +505,7 @@ export default function App() {
               targetLangName={targetLang.name}
             />
 
+            {/* Section 2: Dual Action Cards: Player + MP3 Downloader (Screenshot 3) */}
             <ContinuousPlayer
               items={items}
               currentIndex={currentIndex}
@@ -507,6 +520,7 @@ export default function App() {
               onUpdateSettings={handleUpdateSettings}
             />
 
+            {/* Section 3: Discovered Vocabulary Table with Individual Pronunciation (Screenshot 2) */}
             <WordListTable
               items={items}
               settings={settings}
@@ -518,6 +532,7 @@ export default function App() {
           </div>
         )}
 
+        {/* View 2: Flashcards Deck */}
         {currentView === 'flashcards' && (
           <FlashcardDeck
             items={items}
@@ -526,6 +541,7 @@ export default function App() {
           />
         )}
 
+        {/* View 3: Voice Studio */}
         {currentView === 'studio' && (
           <VoiceStudio
             settings={settings}
@@ -533,15 +549,16 @@ export default function App() {
           />
         )}
 
-        {currentView === 'extension' && isAdmin && (
+        {/* View 4: Chrome Extension Guide */}
+        {currentView === 'extension' && (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-4">
-            <h4 className="text-lg font-bold text-white">Google Chrome Extension Package (Admin Only)</h4>
+            <h4 className="text-lg font-bold text-white">Google Chrome Extension Package</h4>
             <p className="text-xs text-slate-400 max-w-lg mx-auto">
-              Download the official Manifest V3 extension package. Hidden from public visitors.
+              Download the official Manifest V3 extension package to pronounce, translate, and capture words directly from any webpage.
             </p>
             <button
               onClick={() => setIsExtensionModalOpen(true)}
-              className="px-5 py.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-400/20 hover:bg-amber-300 transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-400/20 hover:bg-amber-300 transition-all cursor-pointer"
             >
               Open Chrome Extension Manager
             </button>
@@ -549,6 +566,7 @@ export default function App() {
         )}
       </main>
 
+      {/* Modals */}
       <BulkImportModal
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
@@ -562,19 +580,27 @@ export default function App() {
         onClose={() => setIsExtensionModalOpen(false)}
       />
 
+      {/* Footer */}
       <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>Translate Words, Texts &amp; Convert to MP3 — All Rights Reserved</p>
+          <p>Translate Words, Texts &amp; Convert to MP3 — 100% Free Lifetime Translation &amp; Studio Neural Audio</p>
           <div className="flex items-center gap-3">
-            {isAdmin && (
-              <button
-                onClick={() => setIsExtensionModalOpen(true)}
-                className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Puzzle className="w-3.5 h-3.5 text-amber-400" />
-                <span>Install Chrome Extension (Admin)</span>
-              </button>
-            )}
+            <a
+              href="https://uplcm.com/4/12174511"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>⭐ Sponsored Partner</span>
+            </a>
+            <span className="text-slate-700">•</span>
+            <button
+              onClick={() => setIsExtensionModalOpen(true)}
+              className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <Puzzle className="w-3.5 h-3.5 text-amber-400" />
+              <span>Install Chrome Extension (Manifest V3)</span>
+            </button>
           </div>
         </div>
       </footer>
