@@ -67,6 +67,23 @@ const DEFAULT_SETTINGS: AudioSettings = {
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('player');
 
+  // Hidden Admin Mode check: Visible only if URL contains ?admin=true (Private for you only)
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('admin') === 'true') {
+        setIsAdmin(true);
+        localStorage.setItem('vocabflow_admin_mode', 'true');
+      } else if (localStorage.getItem('vocabflow_admin_mode') === 'true') {
+        setIsAdmin(true);
+      }
+    } catch (e) {
+      // fallback
+    }
+  }, []);
+
   // Load items from localStorage or defaults
   const [items, setItems] = useState<VocabularyItem[]>(() => {
     try {
@@ -390,6 +407,7 @@ export default function App() {
         targetFlag={targetLang.flag}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        isAdmin={isAdmin}
       />
 
       {/* Main Content Area */}
@@ -549,8 +567,8 @@ export default function App() {
           />
         )}
 
-        {/* View 4: Chrome Extension Guide */}
-        {currentView === 'extension' && (
+        {/* View 4: Chrome Extension Guide (Admin Only) */}
+        {currentView === 'extension' && isAdmin && (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-4">
             <h4 className="text-lg font-bold text-white">Google Chrome Extension Package</h4>
             <p className="text-xs text-slate-400 max-w-lg mx-auto">
@@ -593,14 +611,18 @@ export default function App() {
             >
               <span>⭐ Sponsored Partner</span>
             </a>
-            <span className="text-slate-700">•</span>
-            <button
-              onClick={() => setIsExtensionModalOpen(true)}
-              className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Puzzle className="w-3.5 h-3.5 text-amber-400" />
-              <span>Install Chrome Extension (Manifest V3)</span>
-            </button>
+            {isAdmin && (
+              <>
+                <span className="text-slate-700">•</span>
+                <button
+                  onClick={() => setIsExtensionModalOpen(true)}
+                  className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Puzzle className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Install Chrome Extension (Manifest V3)</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </footer>
