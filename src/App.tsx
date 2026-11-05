@@ -611,21 +611,8 @@ export default function App() {
             >
               <span>⭐ Sponsored Partner</span>
             </a>
-            {isAdmin && (
-              <>
-                <span className="text-slate-700">•</span>
-                <button
-                  onClick={() => setIsExtensionModalOpen(true)}
-                  className="text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Puzzle className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Install Chrome Extension (Manifest V3)</span>
-                </button>
-              </>
-            )}
           </div>
         </div>
-      </footer>
-    </div>
+      </footer>    </div>
   );
 }
