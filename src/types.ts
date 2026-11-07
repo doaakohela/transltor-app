@@ -85,4 +85,13 @@ export type PlaybackStage =
   | 'pause_ar'
   | 'ar_1';
 
-export type AppView = 'player' | 'flashcards' | 'words' | 'studio' | 'extension';
+export type AppView =
+  | 'player'
+  | 'flashcards'
+  | 'words'
+  | 'studio'
+  | 'about'
+  | 'contact'
+  | 'privacy'
+  | 'terms'
+  | 'cookies';

@@ -1,19 +1,14 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import {
   Volume2,
   Layers,
-  BookOpen,
   Sliders,
   Plus,
-  Puzzle,
-  Globe,
   Sun,
   Moon,
+  Info,
+  Mail,
+  Shield,
 } from 'lucide-react';
 import { AppView } from '../types.ts';
 
@@ -21,143 +16,213 @@ interface NavbarProps {
   currentView: AppView;
   onViewChange: (view: AppView) => void;
   onOpenAddModal: () => void;
-  onOpenExtensionModal: () => void;
   totalWords: number;
   isPlaying: boolean;
   sourceFlag: string;
   targetFlag: string;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
-  isAdmin?: boolean; // Hidden admin flag to protect extension controls
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView,
   onViewChange,
   onOpenAddModal,
-  onOpenExtensionModal,
   totalWords,
   isPlaying,
   sourceFlag,
   targetFlag,
   theme,
   onToggleTheme,
-  isAdmin = false,
 }) => {
+  const isLight = theme === 'light';
+
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 text-left">
+    <header
+      className={`sticky top-0 z-40 backdrop-blur-md text-left transition-colors duration-200 border-b ${
+        isLight
+          ? 'bg-white/98 border-slate-200 shadow-xs'
+          : 'bg-slate-950/95 border-slate-800 shadow-lg'
+      }`}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 md:gap-6">
         {/* Brand & Language Flags */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <div
+          onClick={() => onViewChange('player')}
+          className="flex items-center gap-3 shrink-0 cursor-pointer group"
+          title="Return to Studio Workstation"
+        >
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
             <Volume2 className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-bold tracking-tight text-white font-sans whitespace-nowrap">
-                Translate Words, Texts <span className="text-amber-400">&amp; Convert to MP3</span>
-              </h1>
-              <span className="text-xs flex items-center gap-1 bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded-md">
+              <span
+                className={`text-sm sm:text-base font-bold tracking-tight font-sans whitespace-nowrap ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}
+              >
+                Translate Words, Texts{' '}
+                <span className={isLight ? 'text-amber-600' : 'text-amber-400'}>
+                  &amp; Convert to MP3
+                </span>
+              </span>
+              <span
+                className={`text-xs flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
+                  isLight
+                    ? 'bg-slate-100 border-slate-200 text-slate-800'
+                    : 'bg-slate-900 border-slate-800 text-slate-300'
+                }`}
+              >
                 <span>{sourceFlag}</span>
-                <span className="text-slate-500">➔</span>
+                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>➔</span>
                 <span>{targetFlag}</span>
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block leading-none mt-0.5">
+            <p
+              className={`text-[11px] hidden sm:block leading-none mt-0.5 ${
+                isLight ? 'text-slate-600 font-medium' : 'text-slate-400'
+              }`}
+            >
               100% Free Lifetime Translation &amp; Studio Neural MP3 Voice Generator
             </p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-1 sm:gap-2">
+        {/* Navigation Tabs (Primary Tools & Policy Pages) */}
+        <nav className="hidden lg:flex items-center gap-1">
           <button
             onClick={() => onViewChange('player')}
-            className={`px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentView === 'player'
-                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 font-semibold'
+                ? isLight
+                  ? 'bg-indigo-100 text-indigo-900 border border-indigo-300 shadow-xs'
+                  : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Volume2 className={`w-4 h-4 ${isPlaying ? 'text-amber-400 animate-pulse' : ''}`} />
-            <span>Studio Workstation</span>
+            <Volume2
+              className={`w-3.5 h-3.5 ${
+                isPlaying ? 'text-amber-500 animate-pulse' : isLight ? 'text-indigo-600' : 'text-slate-400'
+              }`}
+            />
+            <span>Workstation</span>
           </button>
 
           <button
             onClick={() => onViewChange('flashcards')}
-            className={`px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentView === 'flashcards'
-                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 font-semibold'
+                ? isLight
+                  ? 'bg-indigo-100 text-indigo-900 border border-indigo-300 shadow-xs'
+                  : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className={`w-3.5 h-3.5 ${isLight ? 'text-indigo-600' : 'text-slate-400'}`} />
             <span>Flashcards</span>
           </button>
 
           <button
             onClick={() => onViewChange('studio')}
-            className={`px-3 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               currentView === 'studio'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold'
+                ? isLight
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs'
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Sliders className="w-4 h-4 text-amber-400" />
-            <span>Voice Studio</span>
+            <Sliders className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+            <span>Voice Settings</span>
+          </button>
+
+          <span className={`mx-1 ${isLight ? 'text-slate-300' : 'text-slate-700'}`}>|</span>
+
+          {/* AdSense Essential Nav Pages */}
+          <button
+            onClick={() => onViewChange('about')}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+              currentView === 'about'
+                ? isLight
+                  ? 'text-amber-700 font-bold bg-amber-100 border border-amber-200'
+                  : 'text-amber-400 font-bold bg-amber-500/10'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Info className="w-3.5 h-3.5" />
+            <span>About</span>
+          </button>
+
+          <button
+            onClick={() => onViewChange('contact')}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+              currentView === 'contact'
+                ? isLight
+                  ? 'text-amber-700 font-bold bg-amber-100 border border-amber-200'
+                  : 'text-amber-400 font-bold bg-amber-500/10'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span>Contact</span>
+          </button>
+
+          <button
+            onClick={() => onViewChange('privacy')}
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+              currentView === 'privacy'
+                ? isLight
+                  ? 'text-amber-700 font-bold bg-amber-100 border border-amber-200'
+                  : 'text-amber-400 font-bold bg-amber-500/10'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            <span>Privacy</span>
           </button>
         </nav>
 
-        {/* Action Buttons: Day/Night Toggle, Sponsored Link & Admin-Protected Extension Button */}
+        {/* Action Buttons: Day/Night Mode & Import */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Day / Night Mode Toggle Icon */}
           <button
             type="button"
             onClick={onToggleTheme}
             className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
-              theme === 'dark'
-                ? 'bg-slate-900/90 hover:bg-slate-800 text-amber-300 border-slate-700/80 hover:border-amber-400/50'
-                : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300 shadow-amber-500/10'
+              isLight
+                ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold border-amber-300 shadow-xs'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-amber-300 border-slate-700/80 hover:border-amber-400/50'
             }`}
-            title={theme === 'dark' ? 'Switch to Day Mode' : 'Switch to Night Mode'}
+            title={isLight ? 'Switch to Night Mode (الوضع الليلي)' : 'Switch to Day Mode (الوضع النهاري)'}
             aria-label="Toggle Day / Night Mode"
           >
-            {theme === 'dark' ? (
+            {isLight ? (
               <>
-                <Sun className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span className="hidden md:inline">Day Mode</span>
+                <Moon className="w-4 h-4 text-indigo-700 stroke-[2.2]" />
+                <span className="hidden sm:inline">Night Mode</span>
               </>
             ) : (
               <>
-                <Moon className="w-4 h-4 text-indigo-600" />
-                <span className="hidden md:inline">Night Mode</span>
+                <Sun className="w-4 h-4 text-amber-400 animate-pulse stroke-[2.2]" />
+                <span className="hidden sm:inline">Day Mode</span>
               </>
             )}
           </button>
 
-          <a
-            href="https://uplcm.com/4/12174511"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-xl shadow-md shadow-amber-400/25 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer animate-pulse"
-            title="Claim Free VIP Cloud Server & Audio Perks"
-          >
-            <span>🎁 Claim VIP Perks ↗</span>
-          </a>
-
-          {/* Chrome Extension button rendered ONLY when Admin Mode is active */}
-          {isAdmin && (
-            <button
-              onClick={onOpenExtensionModal}
-              className="px-3 py-2 text-xs font-semibold text-indigo-300 bg-indigo-950/60 hover:bg-indigo-900/80 border border-indigo-800/80 rounded-lg transition-all flex items-center gap-1.5 shadow-sm hover:border-indigo-600 whitespace-nowrap cursor-pointer"
-              title="Download Chrome Extension (Manifest V3)"
-            >
-              <Puzzle className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Chrome Extension 🧩</span>
-              <span className="sm:hidden">Extension</span>
-            </button>
-          )}
-
+          {/* Import List Button */}
           <button
             onClick={onOpenAddModal}
             className="px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-all shadow-md shadow-amber-400/20 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"

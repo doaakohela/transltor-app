@@ -1,0 +1,22 @@
+# How to Install LingoBoost in Google Chrome / Brave / Edge
+
+Congratulations! You have downloaded the complete, 100% free Manifest V3 Chrome Extension.
+
+## 30-Second Quick Installation:
+1. Unzip this downloaded (.ZIP) file into a folder on your computer.
+2. Open Google Chrome (or Brave, or Microsoft Edge).
+3. In the address bar, type:
+   chrome://extensions
+   and press Enter.
+4. In the top-right corner of the Extensions page, enable "Developer mode" toggle.
+5. Click on the "Load unpacked" button in the top-left corner.
+6. Select the unzipped folder.
+7. Done! The LingoBoost icon will appear in your browser toolbar!
+
+## Included Features:
+- 100% Free translation supporting 100+ world languages without any API keys.
+- Automatic Arabic Windows-1256 ANSI and UTF-8 decoding (no diamond question marks).
+- Genuine MP3 audio file generation using bundled LAME encoder and Chrome downloads API.
+- Audio Study Rule: Original word is spoken TWICE (2x), translated word is spoken ONCE (1x).
+- Vocabulary Deck supporting file upload (.txt, .csv, .json) and bulk paste up to 10,000 words.
+- Featured Advertising Partner Banner: Featured Advertising Partner - Click to Shop (https://uplcm.com/4/12174511)

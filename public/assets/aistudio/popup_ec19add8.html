@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Translate words, texts & convert to MP3</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --border: #334155;
+      --success: #10b981;
+      --danger: #f43f5e;
+      --danger-hover: #e11d48;
+    }
+    body.light {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #4f46e5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    body {
+      width: 480px;
+      min-height: 620px;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      font-size: 13px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .logo-title {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+      background: var(--card);
+      padding: 3px;
+      border-radius: 8px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 7px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .lang-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    select, textarea, input {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+    select { flex: 1; }
+    textarea { width: 100%; height: 70px; resize: none; margin-bottom: 8px; }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn-success {
+      background: #059669;
+      color: white;
+    }
+    .btn-success:hover { background: #047857; }
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .ad-banner {
+      background: linear-gradient(135deg, #4f46e5, #9333ea);
+      color: white;
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+      margin-top: auto;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      font-size: 12px;
+    }
+    .ad-banner:hover { opacity: 0.95; }
+    .word-list {
+      max-height: 230px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .word-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .rule-badge {
+      display: inline-block;
+      padding: 3px 6px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    .file-input {
+      display: none;
+    }
+    .status-toast {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      display: none;
+    }
+    .status-toast.show { display: block; }
+    .status-toast.success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-toast.error { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+    .status-toast.info { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-title">
+      <span>🌐</span> Translate words, texts & convert to MP3
+      <span class="rule-badge">Free • 100+ Languages</span>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button id="themeToggle" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">🌓 Theme</button>
+    </div>
+  </div>
+
+  <div id="statusToast" class="status-toast info"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabTranslate">Translate</button>
+    <button class="tab-btn" id="tabDeck">Vocab Deck (<span id="deckCountBadge">0</span>)</button>
+    <button class="tab-btn" id="tabImport">Import Files / Paste</button>
+  </div>
+
+  <!-- Tab 1: Translator -->
+  <div id="viewTranslate">
+    <div class="card">
+      <div class="lang-row">
+        <select id="sourceLang">
+          <option value="auto">🌐 Auto Detect</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Spanish</option>
+          <option value="fr">🇫🇷 French</option>
+          <option value="de">🇩🇪 German</option>
+          <option value="ar">🇸🇦 Arabic</option>
+          <option value="zh">🇨🇳 Chinese (Simplified)</option>
+          <option value="zh-TW">🇹🇼 Chinese (Traditional)</option>
+          <option value="ja">🇯🇵 Japanese</option>
+          <option value="ko">🇰🇷 Korean</option>
+          <option value="ru">🇷🇺 Russian</option>
+          <option value="it">🇮🇹 Italian</option>
+          <option value="pt">🇵🇹 Portuguese</option>
+          <option value="tr">🇹🇷 Turkish</option>
+          <option value="hi">🇮🇳 Hindi</option>
+          <option value="ur">🇵🇰 Urdu</option>
+          <option value="fa">🇮🇷 Persian</option>
+          <option value="id">🇮🇩 Indonesian</option>
+          <option value="nl">🇳🇱 Dutch</option>
+          <option value="pl">🇵🇱 Polish</option>
+          <option value="sv">🇸🇪 Swedish</option>
+          <option value="el">🇬🇷 Greek</option>
+          <option value="vi">🇻🇳 Vietnamese</option>
+          <option value="th">🇹🇭 Thai</option>
+          <option value="uk">🇺🇦 Ukrainian</option>
+          <option value="ms">🇲🇾 Malay</option>
+          <option value="he">🇮🇱 Hebrew</option>
+          <option value="ro">🇷🇴 Romanian</option>
+          <option value="cs">🇨🇿 Czech</option>
+          <option value="hu">🇭🇺 Hungarian</option>
+          <option value="da">🇩🇰 Danish</option>
+          <option value="fi">🇫🇮 Finnish</option>
+          <option value="no">🇳🇴 Norwegian</option>
+          <option value="bn">🇧🇩 Bengali</option>
+          <option value="fil">🇵🇭 Filipino (Tagalog)</option>
+          <option value="sw">🇰🇪 Swahili</option>
+          <option value="ku">🇮🇶 Kurdish</option>
+          <option value="az">🇦🇿 Azerbaijani</option>
+          <option value="uz">🇺🇿 Uzbek</option>
+          <option value="kk">🇰🇿 Kazakh</option>
+          <option value="hy">🇦🇲 Armenian</option>
+          <option value="ka">🇬🇪 Georgian</option>
+          <option value="af">🇿🇦 Afrikaans</option>
+          <option value="sq">🇦🇱 Albanian</option>
+          <option value="am">🇪🇹 Amharic</option>
+          <option value="bg">🇧🇬 Bulgarian</option>
+          <option value="hr">🇭🇷 Croatian</option>
+          <option value="sk">🇸🇰 Slovak</option>
+          <option value="sl">🇸🇮 Slovenian</option>
+          <option value="et">🇪🇪 Estonian</option>
+          <option value="lv">🇱🇻 Latvian</option>
+          <option value="lt">🇱🇹 Lithuanian</option>
+          <option value="ca">🇪🇸 Catalan</option>
+          <option value="eu">🇪🇸 Basque</option>
+          <option value="gl">🇪🇸 Galician</option>
+          <option value="la">🏛️ Latin</option>
+          <option value="eo">🟢 Esperanto</option>
+          <option value="sr">🇷🇸 Serbian</option>
+          <option value="mk">🇲🇰 Macedonian</option>
+          <option value="bs">🇧🇦 Bosnian</option>
+          <option value="is">🇮🇸 Icelandic</option>
+          <option value="ga">🇮🇪 Irish</option>
+          <option value="cy">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Welsh</option>
+          <option value="mt">🇲🇹 Maltese</option>
+          <option value="be">🇧🇾 Belarusian</option>
+          <option value="ta">🇮🇳 Tamil</option>
+          <option value="te">🇮🇳 Telugu</option>
+          <option value="kn">🇮🇳 Kannada</option>
+          <option value="ml">🇮🇳 Malayalam</option>
+          <option value="mr">🇮🇳 Marathi</option>
+          <option value="gu">🇮🇳 Gujarati</option>
+          <option value="pa">🇮🇳 Punjabi</option>
+          <option value="si">🇱🇰 Sinhala</option>
+          <option value="my">🇲🇲 Burmese</option>
+          <option value="km">🇰🇭 Khmer</option>
+          <option value="lo">🇱🇦 Lao</option>
+          <option value="mn">🇲🇳 Mongolian</option>
+          <option value="ne">🇳🇵 Nepali</option>
+          <option value="ps">🇦🇫 Pashto</option>
+          <option value="sd">🇵🇰 Sindhi</option>
+          <option value="ug">🇨🇳 Uyghur</option>
+          <option value="yi">✡️ Yiddish</option>
+          <option value="so">🇸🇴 Somali</option>
+          <option value="ha">🇳🇬 Hausa</option>
+          <option value="yo">🇳🇬 Yoruba</option>
+          <option value="ig">🇳🇬 Igbo</option>
+          <option value="zu">🇿🇦 Zulu</option>
+          <option value="xh">🇿🇦 Xhosa</option>
+          <option value="st">🇱🇸 Sesotho</option>
+          <option value="sn">🇿🇼 Shona</option>
+          <option value="mg">🇲🇬 Malagasy</option>
+          <option value="jw">🇮🇩 Javanese</option>
+          <option value="su">🇮🇩 Sundanese</option>
+          <option value="ceb">🇵🇭 Cebuano</option>
+          <option value="hmn">🌏 Hmong</option>
+          <option value="ht">🇭🇹 Haitian Creole</option>
+          <option value="haw">🌺 Hawaiian</option>
+          <option value="sm">🇼🇸 Samoan</option>
+          <option value="mi">🇳🇿 Maori</option>
+          <option value="gd">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scots Gaelic</option>
+          <option value="lb">🇱🇺 Luxembourgish</option>
+          <option value="fy">🇳🇱 Frisian</option>
+          <option value="co">🇫🇷 Corsican</option>
+        </select>
+        <button id="swapBtn" class="btn btn-secondary" style="padding: 4px 8px;" title="Swap Languages">⇄</button>
+        <select id="targetLang">
+          <option value="auto">🌐 Auto Detect</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="es">🇪🇸 Spanish</option>
+          <option value="fr">🇫🇷 French</option>
+          <option value="de">🇩🇪 German</option>
+          <option value="ar">🇸🇦 Arabic</option>
+          <option value="zh">🇨🇳 Chinese (Simplified)</option>
+          <option value="zh-TW">🇹🇼 Chinese (Traditional)</option>
+          <option value="ja">🇯🇵 Japanese</option>
+          <option value="ko">🇰🇷 Korean</option>
+          <option value="ru">🇷🇺 Russian</option>
+          <option value="it">🇮🇹 Italian</option>
+          <option value="pt">🇵🇹 Portuguese</option>
+          <option value="tr">🇹🇷 Turkish</option>
+          <option value="hi">🇮🇳 Hindi</option>
+          <option value="ur">🇵🇰 Urdu</option>
+          <option value="fa">🇮🇷 Persian</option>
+          <option value="id">🇮🇩 Indonesian</option>
+          <option value="nl">🇳🇱 Dutch</option>
+          <option value="pl">🇵🇱 Polish</option>
+          <option value="sv">🇸🇪 Swedish</option>
+          <option value="el">🇬🇷 Greek</option>
+          <option value="vi">🇻🇳 Vietnamese</option>
+          <option value="th">🇹🇭 Thai</option>
+          <option value="uk">🇺🇦 Ukrainian</option>
+          <option value="ms">🇲🇾 Malay</option>
+          <option value="he">🇮🇱 Hebrew</option>
+          <option value="ro">🇷🇴 Romanian</option>
+          <option value="cs">🇨🇿 Czech</option>
+          <option value="hu">🇭🇺 Hungarian</option>
+          <option value="da">🇩🇰 Danish</option>
+          <option value="fi">🇫🇮 Finnish</option>
+          <option value="no">🇳🇴 Norwegian</option>
+          <option value="bn">🇧🇩 Bengali</option>
+          <option value="fil">🇵🇭 Filipino (Tagalog)</option>
+          <option value="sw">🇰🇪 Swahili</option>
+          <option value="ku">🇮🇶 Kurdish</option>
+          <option value="az">🇦🇿 Azerbaijani</option>
+          <option value="uz">🇺🇿 Uzbek</option>
+          <option value="kk">🇰🇿 Kazakh</option>
+          <option value="hy">🇦🇲 Armenian</option>
+          <option value="ka">🇬🇪 Georgian</option>
+          <option value="af">🇿🇦 Afrikaans</option>
+          <option value="sq">🇦🇱 Albanian</option>
+          <option value="am">🇪🇹 Amharic</option>
+          <option value="bg">🇧🇬 Bulgarian</option>
+          <option value="hr">🇭🇷 Croatian</option>
+          <option value="sk">🇸🇰 Slovak</option>
+          <option value="sl">🇸🇮 Slovenian</option>
+          <option value="et">🇪🇪 Estonian</option>
+          <option value="lv">🇱🇻 Latvian</option>
+          <option value="lt">🇱🇹 Lithuanian</option>
+          <option value="ca">🇪🇸 Catalan</option>
+          <option value="eu">🇪🇸 Basque</option>
+          <option value="gl">🇪🇸 Galician</option>
+          <option value="la">🏛️ Latin</option>
+          <option value="eo">🟢 Esperanto</option>
+          <option value="sr">🇷🇸 Serbian</option>
+          <option value="mk">🇲🇰 Macedonian</option>
+          <option value="bs">🇧🇦 Bosnian</option>
+          <option value="is">🇮🇸 Icelandic</option>
+          <option value="ga">🇮🇪 Irish</option>
+          <option value="cy">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Welsh</option>
+          <option value="mt">🇲🇹 Maltese</option>
+          <option value="be">🇧🇾 Belarusian</option>
+          <option value="ta">🇮🇳 Tamil</option>
+          <option value="te">🇮🇳 Telugu</option>
+          <option value="kn">🇮🇳 Kannada</option>
+          <option value="ml">🇮🇳 Malayalam</option>
+          <option value="mr">🇮🇳 Marathi</option>
+          <option value="gu">🇮🇳 Gujarati</option>
+          <option value="pa">🇮🇳 Punjabi</option>
+          <option value="si">🇱🇰 Sinhala</option>
+          <option value="my">🇲🇲 Burmese</option>
+          <option value="km">🇰🇭 Khmer</option>
+          <option value="lo">🇱🇦 Lao</option>
+          <option value="mn">🇲🇳 Mongolian</option>
+          <option value="ne">🇳🇵 Nepali</option>
+          <option value="ps">🇦🇫 Pashto</option>
+          <option value="sd">🇵🇰 Sindhi</option>
+          <option value="ug">🇨🇳 Uyghur</option>
+          <option value="yi">✡️ Yiddish</option>
+          <option value="so">🇸🇴 Somali</option>
+          <option value="ha">🇳🇬 Hausa</option>
+          <option value="yo">🇳🇬 Yoruba</option>
+          <option value="ig">🇳🇬 Igbo</option>
+          <option value="zu">🇿🇦 Zulu</option>
+          <option value="xh">🇿🇦 Xhosa</option>
+          <option value="st">🇱🇸 Sesotho</option>
+          <option value="sn">🇿🇼 Shona</option>
+          <option value="mg">🇲🇬 Malagasy</option>
+          <option value="jw">🇮🇩 Javanese</option>
+          <option value="su">🇮🇩 Sundanese</option>
+          <option value="ceb">🇵🇭 Cebuano</option>
+          <option value="hmn">🌏 Hmong</option>
+          <option value="ht">🇭🇹 Haitian Creole</option>
+          <option value="haw">🌺 Hawaiian</option>
+          <option value="sm">🇼🇸 Samoan</option>
+          <option value="mi">🇳🇿 Maori</option>
+          <option value="gd">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scots Gaelic</option>
+          <option value="lb">🇱🇺 Luxembourgish</option>
+          <option value="fy">🇳🇱 Frisian</option>
+          <option value="co">🇫🇷 Corsican</option>
+        </select>
+      </div>
+
+      <textarea id="sourceText" placeholder="Type or paste any word or phrase for free translation..."></textarea>
+      
+      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+        <button id="translateBtn" class="btn" style="flex: 1;">Translate Free ✨</button>
+        <button id="listenBtn" class="btn btn-secondary" title="Original 2x + Translated 1x">🔊 2x/1x Audio</button>
+        <button id="downloadSingleMp3" class="btn btn-success" title="Download true MP3 file of this word">⬇ MP3</button>
+      </div>
+
+      <div id="resultBox" style="background: var(--bg); padding: 10px; border-radius: 6px; border: 1px solid var(--border); min-height: 48px; font-size: 14px; font-weight: 600;">
+        Translation will appear here...
+      </div>
+      
+      <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+        <span class="rule-badge">Rule: Original (2x) ➔ Translated (1x)</span>
+        <button id="addToListBtn" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">+ Save to Deck</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Vocabulary Deck -->
+  <div id="viewDeck" style="display: none;">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px;">
+        <input type="text" id="deckSearch" placeholder="Search words..." style="flex: 1;">
+        <button id="playAllBtn" class="btn btn-secondary" style="font-size: 11px; padding: 5px 8px;">▶ Play All</button>
+        <button id="downloadBatchMp3" class="btn btn-success" style="font-size: 11px; padding: 5px 8px;">⬇ Playlist MP3</button>
+      </div>
+      <!-- Clear All Deck Button -->
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 6px;">
+        <button id="clearAllDeckBtn" class="btn btn-danger" style="font-size: 10px; padding: 3px 8px;">🗑 Clear All Deck</button>
+      </div>
+      <div class="word-list" id="deckListContainer"></div>
+    </div>
+  </div>
+
+  <!-- Tab 3: File Import & Bulk Paste -->
+  <div id="viewImport" style="display: none;">
+    <div class="card">
+      <div style="font-weight: 700; margin-bottom: 4px;">Import File (.txt, .csv, .json) or Paste Text:</div>
+      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+        Auto-detects UTF-8, Windows-1256 (Arabic ANSI), Excel tables, and formats like <code>word - translation</code> up to 10,000 words.
+      </p>
+
+      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+        <input type="file" id="fileUploadInput" class="file-input" accept=".txt,.csv,.json,.tsv">
+        <button id="uploadFileBtn" class="btn btn-secondary" style="flex: 1;">📂 Upload File (.txt / .csv / .json)</button>
+      </div>
+
+      <textarea id="bulkPasteText" placeholder="Or paste words directly here:
+by far - بفارق كبير
+plugging in - توصيل
+vast - واسع" style="height: 115px;"></textarea>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <button id="submitImportBtn" class="btn btn-success" style="flex: 1;">Import to Vocabulary Deck</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured Advertising Partner Banner -->
+  <a href="https://uplcm.com/4/12174511" target="_blank" class="ad-banner">
+    <div>
+      <div style="font-size: 12px; font-weight: 800;">Featured Advertising Partner - Click to Shop</div>
+      <div style="font-size: 10px; opacity: 0.9;">Special partner offers, tools & shopping deals</div>
+    </div>
+    <span style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 6px; font-size: 11px;">
+      Click to Shop Now ↗
+    </span>
+  </a>
+
+  <script src="lame.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

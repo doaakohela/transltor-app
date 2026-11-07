@@ -24,6 +24,7 @@ interface GoogleTranslateSectionProps {
   settings: AudioSettings;
   onUpdateSettings: (newSettings: Partial<AudioSettings>) => void;
   onAddWord: (sourceText: string, targetText: string) => boolean;
+  theme?: 'dark' | 'light';
 }
 
 const POPULAR_LANGUAGES = [
@@ -45,7 +46,10 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
   settings,
   onUpdateSettings,
   onAddWord,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
+
   const [sourceText, setSourceText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isAutoDetect, setIsAutoDetect] = useState(true);
@@ -272,7 +276,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     }
   };
 
-  // Filter languages for the full picker
+  // Filter languages for the full picker across all 140+ languages
   const filteredPickerLanguages = SUPPORTED_LANGUAGES.filter((l) => {
     const query = pickerSearch.toLowerCase().trim();
     if (!query) return true;
@@ -284,9 +288,21 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
   });
 
   return (
-    <div className="relative bg-slate-900/95 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden transition-all text-left">
+    <div
+      className={`relative border rounded-3xl shadow-xl overflow-hidden transition-all text-left ${
+        isLight
+          ? 'bg-white border-slate-200'
+          : 'bg-slate-900/95 border-slate-800'
+      }`}
+    >
       {/* Top Language Bar (Clean Google Translate Layout) */}
-      <div className="border-b border-slate-800 bg-slate-950/70 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div
+        className={`px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b ${
+          isLight
+            ? 'bg-slate-50 border-slate-200'
+            : 'bg-slate-950/70 border-slate-800'
+        }`}
+      >
         {/* Source Language Controls */}
         <div className="flex items-center flex-wrap gap-1.5 flex-1 min-w-[280px]">
           {/* Detect Language Button */}
@@ -296,6 +312,8 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               isAutoDetect
                 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30'
+                : isLight
+                ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-200 border border-transparent'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent'
             }`}
           >
@@ -311,14 +329,18 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             onClick={() => setActivePicker('source')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               !isAutoDetect
-                ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 shadow-sm'
+                ? isLight
+                  ? 'bg-indigo-50 text-indigo-950 border border-indigo-300 shadow-xs'
+                  : 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 shadow-sm'
+                : isLight
+                ? 'text-slate-800 hover:text-slate-950 hover:bg-slate-200 border border-slate-300'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-800'
             }`}
             title="Click to choose from all world languages"
           >
             <span>{currentSourceLang.flag}</span>
             <span>{currentSourceLang.name}</span>
-            <ChevronDown className="w-4 h-4 text-indigo-400 ml-0.5" />
+            <ChevronDown className={`w-4 h-4 ml-0.5 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`} />
           </button>
 
           {/* Quick Popular Source Language Pills */}
@@ -337,9 +359,13 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                       sourceVoice: fullLang.defaultVoice,
                     });
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 font-semibold'
+                      ? isLight
+                        ? 'bg-indigo-100 text-indigo-950 border border-indigo-300 font-bold'
+                        : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 font-semibold'
+                      : isLight
+                      ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-200'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
@@ -353,7 +379,11 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           <button
             type="button"
             onClick={() => setActivePicker('source')}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-indigo-300 hover:bg-slate-800/60 transition-colors flex items-center gap-1 cursor-pointer"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+              isLight
+                ? 'text-slate-700 hover:text-indigo-700 hover:bg-slate-200'
+                : 'text-slate-400 hover:text-indigo-300 hover:bg-slate-800/60'
+            }`}
             title="Browse all world languages"
           >
             <span>All Languages</span>
@@ -365,10 +395,14 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
         <button
           type="button"
           onClick={handleSwap}
-          className="p-2.5 text-slate-400 hover:text-white rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all hover:scale-105 active:scale-95 shadow-md shrink-0 cursor-pointer"
+          className={`p-2.5 rounded-2xl border transition-all hover:scale-105 active:scale-95 shadow-sm shrink-0 cursor-pointer ${
+            isLight
+              ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+              : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800 hover:text-white'
+          }`}
           title="Swap source and target languages"
         >
-          <ArrowLeftRight className="w-4 h-4 text-amber-400" />
+          <ArrowLeftRight className="w-4 h-4 text-amber-500" />
         </button>
 
         {/* Target Language Controls */}
@@ -377,12 +411,16 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           <button
             type="button"
             onClick={() => setActivePicker('target')}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-950/70 text-amber-300 border border-amber-500/50 hover:border-amber-400 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer ${
+              isLight
+                ? 'bg-amber-100 text-amber-950 border border-amber-300 hover:border-amber-400'
+                : 'bg-amber-950/70 text-amber-300 border border-amber-500/50 hover:border-amber-400'
+            }`}
             title="Click to choose target language from all world languages"
           >
             <span>{currentTargetLang.flag}</span>
             <span>{currentTargetLang.name}</span>
-            <ChevronDown className="w-4 h-4 text-amber-400 ml-0.5" />
+            <ChevronDown className={`w-4 h-4 ml-0.5 ${isLight ? 'text-amber-700' : 'text-amber-400'}`} />
           </button>
 
           {/* Quick Popular Target Language Pills */}
@@ -400,9 +438,13 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                       targetVoice: fullLang.defaultVoice,
                     });
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40 font-semibold'
+                      ? isLight
+                        ? 'bg-amber-100 text-amber-950 border border-amber-300 font-bold'
+                        : 'bg-amber-400/20 text-amber-300 border border-amber-400/40 font-semibold'
+                      : isLight
+                      ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-200'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
@@ -416,7 +458,11 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           <button
             type="button"
             onClick={() => setActivePicker('target')}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-amber-300 hover:bg-slate-800/60 transition-colors flex items-center gap-1 cursor-pointer"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+              isLight
+                ? 'text-slate-700 hover:text-amber-700 hover:bg-slate-200'
+                : 'text-slate-400 hover:text-amber-300 hover:bg-slate-800/60'
+            }`}
             title="Browse all world languages"
           >
             <span>All Languages</span>
@@ -425,28 +471,43 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
         </div>
       </div>
 
-      {/* Full Google Translate-Style Language Selection Overlay Modal */}
+      {/* Full Google Translate-Style Language Selection Overlay Modal (140+ World Languages) */}
       {activePicker && (
-        <div className="absolute inset-0 z-50 bg-slate-950/98 backdrop-blur-md p-6 flex flex-col animate-fade-in text-left">
+        <div
+          className={`absolute inset-0 z-50 p-6 flex flex-col animate-fade-in text-left ${
+            isLight
+              ? 'bg-white/98 backdrop-blur-md text-slate-900 border border-slate-200 shadow-2xl'
+              : 'bg-slate-950/98 backdrop-blur-md text-white border border-slate-800'
+          }`}
+        >
           {/* Picker Top Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div
+            className={`flex items-center justify-between pb-4 border-b ${
+              isLight ? 'border-slate-200' : 'border-slate-800'
+            }`}
+          >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-amber-500 flex items-center justify-center text-white shadow-md">
                 <Globe className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">
-                  Select {activePicker === 'source' ? 'Source' : 'Target'} Language
+                <h3 className={`text-base font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Select {activePicker === 'source' ? 'Source' : 'Target'} Language (
+                  {SUPPORTED_LANGUAGES.length} Languages)
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Comprehensive world languages with native neural studio voices
+                <p className={`text-xs ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
+                  Comprehensive world languages like Google Translate with neural studio voices
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => setActivePicker(null)}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                isLight
+                  ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
               title="Close picker (Esc)"
             >
               <X className="w-5 h-5" />
@@ -456,19 +517,29 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           {/* Search Input Bar */}
           <div className="pt-4 pb-3">
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Search
+                className={`w-4 h-4 absolute left-3.5 top-3.5 ${
+                  isLight ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={pickerSearch}
                 onChange={(e) => setPickerSearch(e.target.value)}
-                placeholder="Search languages by English name, native script, or code (e.g. Spanish, العربية, zh)..."
-                className="w-full bg-slate-900 border border-slate-700/80 focus:border-amber-400 rounded-2xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner"
+                placeholder="Search all 140+ world languages by English name, native script, or code (e.g. Spanish, العربية, zh, af)..."
+                className={`w-full rounded-2xl pl-10 pr-10 py-3 text-sm outline-none transition-all shadow-inner ${
+                  isLight
+                    ? 'bg-slate-50 border border-slate-300 focus:border-indigo-600 text-slate-900 placeholder:text-slate-500'
+                    : 'bg-slate-900 border border-slate-700/80 focus:border-amber-400 text-white placeholder-slate-500'
+                }`}
               />
               {pickerSearch && (
                 <button
                   onClick={() => setPickerSearch('')}
-                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white"
+                  className={`absolute right-3.5 top-3.5 ${
+                    isLight ? 'text-slate-500 hover:text-slate-800' : 'text-slate-400 hover:text-white'
+                  }`}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -479,14 +550,22 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           {/* Quick Popular Pills */}
           {!pickerSearch && (
             <div className="pb-3 flex items-center gap-2 overflow-x-auto">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
+              <span
+                className={`text-[11px] font-bold uppercase tracking-wider shrink-0 ${
+                  isLight ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
                 Popular:
               </span>
               {POPULAR_LANGUAGES.map((pl) => (
                 <button
                   key={pl.code}
                   onClick={() => handleSelectLanguage(pl.code)}
-                  className="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                  className={`px-3 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer border ${
+                    isLight
+                      ? 'bg-slate-100 hover:bg-indigo-50 border-slate-200 text-slate-800'
+                      : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300 hover:text-white'
+                  }`}
                 >
                   <span>{pl.flag}</span>
                   <span>{pl.name}</span>
@@ -510,24 +589,42 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                     onClick={() => handleSelectLanguage(lang.code)}
                     className={`p-3 rounded-2xl text-left border transition-all flex items-center justify-between cursor-pointer group ${
                       isSelected
-                        ? 'bg-amber-400/15 border-amber-400/60 shadow-md text-amber-200'
+                        ? isLight
+                          ? 'bg-amber-100 border-amber-400 text-amber-950 font-bold shadow-xs'
+                          : 'bg-amber-400/15 border-amber-400/60 shadow-md text-amber-200'
+                        : isLight
+                        ? 'bg-slate-50 border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-slate-800'
                         : 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-800 hover:border-slate-700 text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-xl shrink-0">{lang.flag}</span>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-white group-hover:text-amber-300 truncate transition-colors">
+                        <div
+                          className={`text-xs font-bold truncate transition-colors ${
+                            isLight
+                              ? 'text-slate-900 group-hover:text-indigo-700'
+                              : 'text-white group-hover:text-amber-300'
+                          }`}
+                        >
                           {lang.name}
                         </div>
-                        <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                        <div
+                          className={`text-[11px] truncate mt-0.5 ${
+                            isLight ? 'text-slate-600 font-medium' : 'text-slate-400'
+                          }`}
+                        >
                           {lang.nativeName}
                         </div>
                       </div>
                     </div>
 
                     {isSelected && (
-                      <Check className="w-4 h-4 text-amber-400 shrink-0 ml-2" />
+                      <Check
+                        className={`w-4 h-4 shrink-0 ml-2 ${
+                          isLight ? 'text-amber-700' : 'text-amber-400'
+                        }`}
+                      />
                     )}
                   </button>
                 );
@@ -535,7 +632,11 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             </div>
 
             {filteredPickerLanguages.length === 0 && (
-              <div className="text-center py-12 text-slate-500 text-xs">
+              <div
+                className={`text-center py-12 text-xs ${
+                  isLight ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
                 No languages match "{pickerSearch}". Try searching by country, code, or native script.
               </div>
             )}
@@ -544,22 +645,36 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
       )}
 
       {/* Main Dual Translation Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x ${
+          isLight ? 'divide-slate-200' : 'divide-slate-800'
+        }`}
+      >
         {/* Source Text Area (Left) */}
-        <div className="p-5 flex flex-col justify-between min-h-[220px] bg-slate-950/40">
+        <div
+          className={`p-5 flex flex-col justify-between min-h-[220px] ${
+            isLight ? 'bg-slate-50/50' : 'bg-slate-950/40'
+          }`}
+        >
           <div className="relative flex-1">
             <textarea
               value={sourceText}
               onChange={(e) => setSourceText(e.target.value)}
               placeholder="Enter text or word to translate & pronounce..."
               rows={4}
-              className="w-full bg-transparent border-0 text-white text-lg sm:text-xl placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
+              className={`w-full bg-transparent border-0 text-lg sm:text-xl focus:outline-none resize-none leading-relaxed ${
+                isLight
+                  ? 'text-slate-900 placeholder:text-slate-400 font-medium'
+                  : 'text-white placeholder-slate-600'
+              }`}
             />
             {sourceText && (
               <button
                 type="button"
                 onClick={() => setSourceText('')}
-                className="absolute right-0 top-0 p-1 text-slate-500 hover:text-white transition-colors cursor-pointer"
+                className={`absolute right-0 top-0 p-1 transition-colors cursor-pointer ${
+                  isLight ? 'text-slate-400 hover:text-slate-800' : 'text-slate-500 hover:text-white'
+                }`}
                 title="Clear text"
               >
                 <X className="w-4 h-4" />
@@ -568,44 +683,68 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           </div>
 
           {/* Source Action Bar */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-850 text-xs text-slate-400">
+          <div
+            className={`flex items-center justify-between pt-3 border-t text-xs ${
+              isLight
+                ? 'border-slate-200 text-slate-700'
+                : 'border-slate-850 text-slate-400'
+            }`}
+          >
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleListenSource}
                 disabled={!sourceText.trim() || isPlayingSource}
-                className="p-2 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-slate-800 disabled:opacity-30 transition-all cursor-pointer"
+                className={`p-2 rounded-xl disabled:opacity-30 transition-all cursor-pointer ${
+                  isLight
+                    ? 'text-slate-700 hover:text-indigo-700 hover:bg-slate-200/80'
+                    : 'text-slate-400 hover:text-indigo-400 hover:bg-slate-800'
+                }`}
                 title={`Listen in ${currentSourceLang.name}`}
               >
                 {isPlayingSource ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+                  <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
                 ) : (
                   <Volume2 className="w-5 h-5" />
                 )}
               </button>
-              <span className="text-[11px] text-slate-500">
+              <span className={`text-[11px] ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
                 Voice: {currentSourceLang.voices[0]?.name.split(' - ')[0] || 'Default'}
               </span>
             </div>
 
-            <span className="font-mono text-[11px] text-slate-500">
+            <span className={`font-mono text-[11px] ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
               {sourceText.length} / 5000
             </span>
           </div>
         </div>
 
         {/* Target Translation Area (Right) */}
-        <div className="p-5 flex flex-col justify-between min-h-[220px] bg-slate-900/60 relative">
+        <div
+          className={`p-5 flex flex-col justify-between min-h-[220px] relative ${
+            isLight ? 'bg-amber-50/20' : 'bg-slate-900/60'
+          }`}
+        >
           <div className="relative flex-1">
             {isTranslating ? (
-              <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
-                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+              <div
+                className={`flex items-center gap-2 text-sm py-4 ${
+                  isLight ? 'text-slate-700' : 'text-slate-400'
+                }`}
+              >
+                <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
                 <span>Translating with AI...</span>
               </div>
             ) : (
               <div
                 className={`text-lg sm:text-xl leading-relaxed ${
-                  translatedText ? 'text-amber-200 font-medium' : 'text-slate-600'
+                  translatedText
+                    ? isLight
+                      ? 'text-slate-900 font-semibold'
+                      : 'text-amber-200 font-medium'
+                    : isLight
+                    ? 'text-slate-400'
+                    : 'text-slate-600'
                 }`}
                 dir={currentTargetLang.script === 'arabic' ? 'rtl' : 'ltr'}
               >
@@ -615,18 +754,28 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           </div>
 
           {/* Target Action Bar */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-850 text-xs text-slate-400">
+          <div
+            className={`flex items-center justify-between pt-3 border-t text-xs ${
+              isLight
+                ? 'border-slate-200 text-slate-700'
+                : 'border-slate-850 text-slate-400'
+            }`}
+          >
             <div className="flex items-center gap-2">
               {/* Listen Target Button */}
               <button
                 type="button"
                 onClick={handleListenTarget}
                 disabled={!translatedText.trim() || isPlayingTarget}
-                className="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-slate-800 disabled:opacity-30 transition-all cursor-pointer"
+                className={`p-2 rounded-xl disabled:opacity-30 transition-all cursor-pointer ${
+                  isLight
+                    ? 'text-slate-700 hover:text-amber-700 hover:bg-slate-200/80'
+                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
+                }`}
                 title={`Listen in ${currentTargetLang.name}`}
               >
                 {isPlayingTarget ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
+                  <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
                 ) : (
                   <Volume2 className="w-5 h-5" />
                 )}
@@ -637,11 +786,15 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                 type="button"
                 onClick={handleCopyTarget}
                 disabled={!translatedText.trim()}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 transition-all cursor-pointer"
+                className={`p-2 rounded-xl disabled:opacity-30 transition-all cursor-pointer ${
+                  isLight
+                    ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-200/80'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
                 title="Copy translation"
               >
                 {copiedTarget ? (
-                  <Check className="w-4 h-4 text-emerald-400" />
+                  <Check className="w-4 h-4 text-emerald-600 stroke-[2.5]" />
                 ) : (
                   <Copy className="w-4 h-4" />
                 )}

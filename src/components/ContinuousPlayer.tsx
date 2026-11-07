@@ -34,6 +34,7 @@ interface ContinuousPlayerProps {
   onSelectIndex: (index: number) => void;
   onToggleMastered: (id: string) => void;
   onUpdateSettings: (settings: Partial<AudioSettings>) => void;
+  theme?: 'dark' | 'light';
 }
 
 const CHUNK_SIZE = 100;
@@ -50,7 +51,9 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
   onSelectIndex,
   onToggleMastered,
   onUpdateSettings,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   const [selectedPartIndex, setSelectedPartIndex] = useState(0);
   const [isDownloadingPart, setIsDownloadingPart] = useState(false);
   const [partSuccess, setPartSuccess] = useState(false);
@@ -69,6 +72,15 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
   const partStart = validPartIndex * CHUNK_SIZE;
   const partEnd = Math.min(items.length, (validPartIndex + 1) * CHUNK_SIZE);
   const selectedPartItems = items.slice(partStart, partEnd);
+  const is2x1x = (settings.sourceRepeats ?? 2) === 2 && (settings.targetRepeats ?? 1) === 1;
+
+  const handleToggleRepetitionPattern = () => {
+    if (is2x1x) {
+      onUpdateSettings({ sourceRepeats: 1, targetRepeats: 2 });
+    } else {
+      onUpdateSettings({ sourceRepeats: 2, targetRepeats: 1 });
+    }
+  };
 
   // Download selected part MP3 (e.g. Part 1: 1-100)
   const handleDownloadPart = async () => {
@@ -152,7 +164,13 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
       {/* Dual Cards Grid (Screenshot 3) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* CARD 1 (LEFT): LIVE CONTINUOUS PLAYER */}
-        <div className="relative overflow-hidden bg-gradient-to-b from-slate-900/95 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl flex flex-col justify-between">
+        <div
+          className={`relative overflow-hidden rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-colors border ${
+            isLight
+              ? 'bg-white border-slate-200 shadow-xl'
+              : 'bg-gradient-to-b from-slate-900/95 via-slate-900 to-slate-950 border-slate-800 shadow-2xl'
+          }`}
+        >
           {/* Subtle audio glow */}
           <div
             className={`absolute -top-24 -left-24 w-64 h-64 rounded-full blur-3xl transition-opacity duration-700 pointer-events-none ${
@@ -166,20 +184,48 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
 
           <div className="space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div
+              className={`flex items-center justify-between border-b pb-3 ${
+                isLight ? 'border-slate-200' : 'border-slate-800'
+              }`}
+            >
               <div>
-                <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider block">
+                <span className={`text-[11px] font-bold uppercase tracking-wider block ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`}>
                   Live Listening
                 </span>
-                <h4 className="text-base font-bold text-white tracking-tight mt-0.5">
+                <h4 className={`text-base font-bold tracking-tight mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   Live Continuous Player
                 </h4>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
+                  onClick={handleToggleRepetitionPattern}
+                  title={
+                    is2x1x
+                      ? 'Current: 2x Word + 1x Translation. Click to switch to: 1x Word + 2x Translation'
+                      : 'Current: 1x Word + 2x Translation. Click to switch to: 2x Word + 1x Translation'
+                  }
+                  className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:scale-105 active:scale-95 ${
+                    is2x1x
+                      ? isLight
+                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-200'
+                        : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border-indigo-700/80'
+                      : isLight
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200'
+                      : 'bg-amber-950/80 hover:bg-amber-900 text-amber-300 border-amber-600/80'
+                  }`}
+                >
+                  <Repeat className={`w-3.5 h-3.5 ${is2x1x ? (isLight ? 'text-indigo-700' : 'text-indigo-400') : (isLight ? 'text-amber-700' : 'text-amber-400')}`} />
+                  <span>{is2x1x ? '2x Word + 1x Trans' : '1x Word + 2x Trans'}</span>
+                </button>
+
+                <button
                   onClick={() => setShowPlaylist(!showPlaylist)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
                   title="Toggle playlist queue"
                 >
                   <ListMusic className="w-4 h-4" />
@@ -187,21 +233,29 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Speaks each word 2x in Source voice + 1x in Target voice with natural studio pauses and zero robotic intro names.
+            <p className={`text-xs leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Speaks each word <strong className={isLight ? 'text-indigo-700' : 'text-indigo-300'}>{settings.sourceRepeats ?? 2}x</strong> in Source voice + <strong className={isLight ? 'text-amber-700' : 'text-amber-300'}>{settings.targetRepeats ?? 1}x</strong> in Target voice with natural studio pauses and zero robotic intro names.
             </p>
 
             {/* Word Index Counter & Navigation Buttons */}
-            <div className="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3.5 py-2 text-xs">
-              <span className="text-slate-400 font-mono">
-                Word: <strong className="text-white font-bold">{currentIndex + 1}</strong> / {items.length}
+            <div
+              className={`flex items-center justify-between border rounded-xl px-3.5 py-2 text-xs ${
+                isLight
+                  ? 'bg-slate-50 border-slate-200 text-slate-700'
+                  : 'bg-slate-950/70 border-slate-800 text-slate-400'
+              }`}
+            >
+              <span className="font-mono">
+                Word: <strong className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>{currentIndex + 1}</strong> / {items.length}
               </span>
 
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={onPrev}
                   disabled={currentIndex === 0}
-                  className="p-1 text-slate-400 hover:text-white disabled:opacity-30 rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
+                  className={`p-1 disabled:opacity-30 rounded-md transition-colors cursor-pointer ${
+                    isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-200' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
                   title="Previous word"
                 >
                   <SkipBack className="w-4 h-4" />
@@ -209,7 +263,9 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                 <button
                   onClick={onNext}
                   disabled={currentIndex + 1 >= items.length}
-                  className="p-1 text-slate-400 hover:text-white disabled:opacity-30 rounded-md hover:bg-slate-800 transition-colors cursor-pointer"
+                  className={`p-1 disabled:opacity-30 rounded-md transition-colors cursor-pointer ${
+                    isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-200' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
                   title="Next word"
                 >
                   <SkipForward className="w-4 h-4" />
@@ -218,7 +274,11 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
             </div>
 
             {/* Center Big Word Display Box */}
-            <div className="bg-slate-950 border border-slate-800/90 rounded-2xl p-6 text-center space-y-3 min-h-[160px] flex flex-col items-center justify-center relative shadow-inner">
+            <div
+              className={`border rounded-2xl p-6 text-center space-y-3 min-h-[160px] flex flex-col items-center justify-center relative shadow-inner ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800/90'
+              }`}
+            >
               {/* Audio Wave Indicator */}
               <div className="h-6 flex items-center justify-center gap-1">
                 {isSpeaking ? (
@@ -273,55 +333,90 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
         </div>
 
         {/* CARD 2 (RIGHT): DOWNLOAD MP3 AUDIO FILES */}
-        <div className="relative overflow-hidden bg-gradient-to-b from-slate-900/95 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl flex flex-col justify-between">
+        <div
+          className={`relative overflow-hidden rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-colors border ${
+            isLight
+              ? 'bg-white border-slate-200 shadow-xl'
+              : 'bg-gradient-to-b from-slate-900/95 via-slate-900 to-slate-950 border-slate-800 shadow-2xl'
+          }`}
+        >
           <div className="space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div
+              className={`flex items-center justify-between border-b pb-3 ${
+                isLight ? 'border-slate-200' : 'border-slate-800'
+              }`}
+            >
               <div>
-                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+                <span className={`text-[11px] font-bold uppercase tracking-wider block ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
                   Studio MP3 Files
                 </span>
-                <h4 className="text-base font-bold text-white tracking-tight mt-0.5">
+                <h4 className={`text-base font-bold tracking-tight mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   Download MP3 Audio Files
                 </h4>
               </div>
 
-              <span className="px-2.5 py-1 text-[10px] font-bold bg-amber-400 text-slate-950 rounded-lg shadow-sm">
-                Pure MP3 Format
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleToggleRepetitionPattern}
+                  title="Switch repetition mode (2x+1x ⇄ 1x+2x)"
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-lg border transition-colors cursor-pointer flex items-center gap-1 shadow-xs ${
+                    isLight
+                      ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                  }`}
+                >
+                  <Repeat className="w-3 h-3 text-amber-500" />
+                  <span>{is2x1x ? '2x+1x' : '1x+2x'}</span>
+                </button>
+                <span className="px-2.5 py-1 text-[10px] font-bold bg-amber-400 text-slate-950 rounded-lg shadow-xs">
+                  Pure MP3 Format
+                </span>
+              </div>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Full studio audio (2x source + 1x target). Offline playback ready for mobile, car, or desktop player.
+            <p className={`text-xs leading-relaxed ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Full studio audio (<strong className={isLight ? 'text-indigo-700' : 'text-indigo-300'}>{settings.sourceRepeats ?? 2}x source</strong> + <strong className={isLight ? 'text-amber-700' : 'text-amber-300'}>{settings.targetRepeats ?? 1}x target</strong>). Offline playback ready for mobile, car, or desktop player.
             </p>
 
             {/* Chunk & Part Selection Box */}
-            <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3.5">
-              <div className="flex items-center justify-between text-xs text-slate-300">
+            <div
+              className={`border rounded-2xl p-4 space-y-3.5 ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'
+              }`}
+            >
+              <div className={`flex items-center justify-between text-xs ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
                 <span>Selected Part Info:</span>
-                <span className="text-amber-300 font-mono font-semibold">
+                <span className={`font-mono font-bold ${isLight ? 'text-amber-800' : 'text-amber-300'}`}>
                   Part {validPartIndex + 1} ({partStart + 1} - {partEnd} of {items.length})
                 </span>
               </div>
 
               {/* Chunk Size notice */}
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
+              <div className={`flex items-center justify-between text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 <span>Chunk Size:</span>
-                <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono">
+                <span className={`px-2 py-0.5 rounded border font-mono ${
+                  isLight ? 'bg-white border-slate-300 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-300'
+                }`}>
                   100 words per file (Recommended)
                 </span>
               </div>
 
               {/* Part Dropdown Selector */}
               <div className="space-y-1">
-                <label className="text-[11px] text-slate-400 font-medium block">
+                <label className={`text-[11px] font-medium block ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   Choose Part to Download:
                 </label>
                 <div className="relative">
                   <select
                     value={validPartIndex}
                     onChange={(e) => setSelectedPartIndex(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white appearance-none outline-none focus:border-amber-400 cursor-pointer font-mono"
+                    className={`w-full border rounded-xl px-3.5 py-2.5 text-xs appearance-none outline-none focus:border-amber-500 cursor-pointer font-mono ${
+                      isLight
+                        ? 'bg-white border-slate-300 text-slate-900 shadow-xs'
+                        : 'bg-slate-900 border-slate-700/80 text-white'
+                    }`}
                   >
                     {Array.from({ length: totalParts }).map((_, idx) => {
                       const s = idx * CHUNK_SIZE + 1;
@@ -333,7 +428,7 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                       );
                     })}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                  <ChevronDown className={`w-4 h-4 absolute right-3 top-3 pointer-events-none ${isLight ? 'text-slate-500' : 'text-slate-400'}`} />
                 </div>
               </div>
             </div>
@@ -371,28 +466,31 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
             <button
               onClick={handleDownloadAllParts}
               disabled={isDownloadingAll || items.length === 0}
-              className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 text-slate-300 hover:text-white border border-slate-800 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+                isLight
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-xs'
+                  : 'bg-slate-950 hover:bg-slate-900 text-slate-300 hover:text-white border-slate-800'
+              }`}
             >
               {isDownloadingAll ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
                   <span>Packaging All Parts...</span>
                 </>
               ) : allSuccess ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
                   <span>All Parts Downloaded!</span>
                 </>
               ) : (
                 <>
-                  <Layers className="w-3.5 h-3.5 text-amber-400" />
+                  <Layers className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
                   <span>
                     Download All Parts Automatically ({totalParts} Files)
                   </span>
                 </>
               )}
             </button>
-
             {/* Live Progress Bar when downloading */}
             {(isDownloadingPart || isDownloadingAll) && downloadProgressText && (
               <div className="bg-amber-400/10 border border-amber-400/30 rounded-xl p-2.5 text-xs text-amber-300 flex items-center gap-2 animate-pulse">

@@ -22,9 +22,9 @@ import {
   Layers,
   Sparkles,
   AlertCircle,
-  Puzzle,
   Globe,
   FolderDown,
+  Repeat,
 } from 'lucide-react';
 import { speechService, sleep } from './services/speechService.ts';
 import { AudioSettings, PlaybackStage, VocabularyItem, AppView } from './types.ts';
@@ -37,9 +37,14 @@ import { FlashcardDeck } from './components/FlashcardDeck.tsx';
 import { WordListTable } from './components/WordListTable.tsx';
 import { VoiceStudio } from './components/VoiceStudioModal.tsx';
 import { BulkImportModal } from './components/BulkImportModal.tsx';
-import { ChromeExtensionModal } from './components/ChromeExtensionModal.tsx';
 import { WordInputBar } from './components/WordInputBar.tsx';
 import { BulkTextareaWorkstation } from './components/BulkTextareaWorkstation.tsx';
+import { AdSenseSlot } from './components/AdSenseSlot.tsx';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage.tsx';
+import { TermsPage } from './pages/TermsPage.tsx';
+import { AboutPage } from './pages/AboutPage.tsx';
+import { ContactPage } from './pages/ContactPage.tsx';
+import { CookiePolicyPage } from './pages/CookiePolicyPage.tsx';
 import { INITIAL_VOCABULARY, PRESET_PACKS } from './data/presets.ts';
 
 const DEFAULT_SETTINGS: AudioSettings = {
@@ -66,23 +71,6 @@ const DEFAULT_SETTINGS: AudioSettings = {
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('player');
-
-  // Hidden Admin Mode check: Visible only if URL contains ?admin=true (Private for you only)
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('admin') === 'true') {
-        setIsAdmin(true);
-        localStorage.setItem('vocabflow_admin_mode', 'true');
-      } else if (localStorage.getItem('vocabflow_admin_mode') === 'true') {
-        setIsAdmin(true);
-      }
-    } catch (e) {
-      // fallback
-    }
-  }, []);
 
   // Load items from localStorage or defaults
   const [items, setItems] = useState<VocabularyItem[]>(() => {
@@ -169,7 +157,6 @@ export default function App() {
 
   // Modals and UI state
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
-  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const isPlayingRef = useRef(isPlaying);
@@ -197,6 +184,16 @@ export default function App() {
 
   const handleUpdateSettings = (newSettings: Partial<AudioSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
+  };
+
+  const is2x1x = (settings.sourceRepeats ?? 2) === 2 && (settings.targetRepeats ?? 1) === 1;
+
+  const handleToggleRepetitionPattern = () => {
+    if (is2x1x) {
+      handleUpdateSettings({ sourceRepeats: 1, targetRepeats: 2 });
+    } else {
+      handleUpdateSettings({ sourceRepeats: 2, targetRepeats: 1 });
+    }
   };
 
   // Add a single word
@@ -400,122 +397,178 @@ export default function App() {
         currentView={currentView}
         onViewChange={setCurrentView}
         onOpenAddModal={() => setIsBulkImportOpen(true)}
-        onOpenExtensionModal={() => setIsExtensionModalOpen(true)}
         totalWords={items.length}
         isPlaying={isPlaying}
         sourceFlag={sourceLang.flag}
         targetFlag={targetLang.flag}
         theme={theme}
         onToggleTheme={handleToggleTheme}
-        isAdmin={isAdmin}
       />
 
       {/* Main Content Area */}
       <main
-        className={`flex-1 w-full mx-auto py-6 space-y-6 transition-all duration-300 ${
+        className={`flex-1 w-full mx-auto py-4 space-y-6 transition-all duration-300 ${
           isExpanded ? 'max-w-[98%] px-3 sm:px-6' : 'max-w-6xl px-4 sm:px-6'
         }`}
       >
-        {/* High-Converting Sponsored Partner Banner with In-Place Maximize Toggle */}
-        <div className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-indigo-950/40 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
-          <div className="flex items-center gap-3 text-left">
-            <span className="px-2.5 py-1 text-[11px] font-extrabold bg-amber-400 text-slate-950 rounded-lg shadow-sm shrink-0 uppercase tracking-wider">
-              VIP Partner Offer
-            </span>
-            <p className="text-xs sm:text-sm text-slate-200 font-medium">
-              🎁 Claim Free Unlimited High-Speed Cloud Server &amp; VIP Audio Perks (100% Free Lifetime)
-            </p>
+        {/* Top Header Controls & Official App Badge (Replaces old partner banner) */}
+        <div
+          className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl p-3 sm:p-4 border transition-colors ${
+            theme === 'light'
+              ? 'bg-white border-slate-200 shadow-sm'
+              : 'bg-slate-900/60 border-slate-800/80 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <div className={`text-xs sm:text-sm ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>
+              <span className={`font-semibold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>
+                Universal Neural Audio &amp; Translation Studio
+              </span>
+              <span className={`mx-2 hidden md:inline ${theme === 'light' ? 'text-slate-400' : 'text-slate-500'}`}>·</span>
+              <span className={`text-xs hidden md:inline ${theme === 'light' ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
+                {is2x1x ? '2x Word + 1x Translation' : '1x Word + 2x Translation'} Memorization
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
-            {/* In-Place Maximize Window Toggle (NEVER window.open) */}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* In-Place Maximize Window Toggle */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                theme === 'light'
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
+              }`}
               title="Toggle in-place expanded workstation view"
             >
               <span>{isExpanded ? '⤡ Compact View' : '⤢ Maximize View'}</span>
             </button>
 
-            {/* High-CTR Partner Link */}
             <a
-              href="https://uplcm.com/4/12174511"
+              href="https://www.transltor.xyz"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl font-bold text-xs transition-all shadow-lg shadow-amber-400/20 flex items-center gap-1.5 whitespace-nowrap cursor-pointer animate-pulse"
-              title="Click here to claim free VIP perks from our partner"
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+                theme === 'light'
+                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-indigo-200 font-bold shadow-xs'
+                  : 'bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 border-indigo-800/60'
+              }`}
+              title="Visit Official Domain"
             >
-              <span>Claim Free VIP Perks ↗</span>
+              <Globe className={`w-3.5 h-3.5 ${theme === 'light' ? 'text-indigo-600' : 'text-indigo-400'}`} />
+              <span>www.transltor.xyz ↗</span>
             </a>
           </div>
         </div>
 
-        {/* Top Google Translate Section */}
-        <GoogleTranslateSection
-          settings={settings}
-          onUpdateSettings={handleUpdateSettings}
-          onAddWord={handleAddWord}
-        />
+        {/* Top Google AdSense Responsive Leaderboard Unit */}
+        <AdSenseSlot format="leaderboard" />
 
-        {/* Universal Language & Voice Selector */}
-        <LanguageSelector
-          settings={settings}
-          onUpdateSettings={handleUpdateSettings}
-        />
-
-        {/* View Switcher Tabs Bar (Workstation vs 1-Word Flashcards Deck) */}
-        <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl p-2 gap-2 overflow-x-auto shadow-lg">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentView('player')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                currentView === 'player'
-                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Volume2 className="w-4 h-4" />
-              <span>Studio Workstation</span>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('flashcards')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                currentView === 'flashcards'
-                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md shadow-amber-400/25'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Flashcards Deck (1 Word Focus)</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-slate-950/60 text-amber-300">
-                {items.length} cards
-              </span>
-            </button>
-
-            <button
-              onClick={() => setCurrentView('studio')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
-                currentView === 'studio'
-                  ? 'bg-slate-800 text-amber-300 border border-amber-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <Sliders className="w-4 h-4 text-amber-400" />
-              <span>Voice Settings</span>
-            </button>
-          </div>
-
-          <div className="text-xs text-slate-400 font-mono hidden md:flex items-center gap-2 pr-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>2x Source + 1x Target MP3 Engine</span>
-          </div>
-        </div>
-
-        {/* View 1: Studio Workstation (Unifies Screenshot 1, 2, and 3) */}
+        {/* Studio Workstation Views (Translation, Flashcards, Voice Studio) */}
         {currentView === 'player' && (
           <div className="space-y-6 animate-fade-in">
-            {/* Section 1: Bulk Input Textarea Workstation (Screenshot 1) */}
+            {/* Top Google Translate Section */}
+            <GoogleTranslateSection
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              onAddWord={handleAddWord}
+              theme={theme}
+            />
+
+            {/* Universal Language & Voice Selector */}
+            <LanguageSelector
+              settings={settings}
+              onUpdateSettings={handleUpdateSettings}
+              theme={theme}
+            />
+
+            {/* View Switcher Tabs Bar */}
+            <div
+              className={`flex items-center justify-between rounded-2xl p-2 gap-2 overflow-x-auto border transition-colors ${
+                theme === 'light'
+                  ? 'bg-white border-slate-200 shadow-sm'
+                  : 'bg-slate-900/90 border-slate-800 shadow-lg'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentView('player')}
+                  className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25 flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                >
+                  <Volume2 className="w-4 h-4" />
+                  <span>Studio Workstation</span>
+                </button>
+
+                <button
+                  onClick={() => setCurrentView('flashcards')}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                    theme === 'light'
+                      ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                  <span>Flashcards Deck (1 Word Focus)</span>
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+                      theme === 'light'
+                        ? 'bg-amber-100 text-amber-950 font-bold border border-amber-200'
+                        : 'bg-slate-950/60 text-amber-300'
+                    }`}
+                  >
+                    {items.length} cards
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setCurrentView('studio')}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                    theme === 'light'
+                      ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Sliders className={`w-4 h-4 ${theme === 'light' ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <span>Voice Settings</span>
+                </button>
+              </div>
+
+              {/* Repetition Mode Quick Toggle Icon Button */}
+              <div className="flex items-center gap-2 pr-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleToggleRepetitionPattern}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm hover:scale-105 active:scale-95 whitespace-nowrap ${
+                    is2x1x
+                      ? theme === 'light'
+                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-200'
+                        : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border-indigo-700/80'
+                      : theme === 'light'
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200'
+                      : 'bg-amber-950/80 hover:bg-amber-900 text-amber-300 border-amber-600/80'
+                  }`}
+                  title="Click to switch audio repetition mode: (2x Source + 1x Target) ⇄ (1x Source + 2x Target)"
+                >
+                  <Repeat
+                    className={`w-3.5 h-3.5 ${
+                      is2x1x
+                        ? theme === 'light'
+                          ? 'text-indigo-700'
+                          : 'text-indigo-400'
+                        : theme === 'light'
+                        ? 'text-amber-700'
+                        : 'text-amber-400 animate-pulse'
+                    }`}
+                  />
+                  <span>{is2x1x ? '2x Source + 1x Target' : '1x Source + 2x Target'}</span>
+                  <span className="text-[10px] opacity-70">⇄</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Section 1: Bulk Input Textarea Workstation */}
             <BulkTextareaWorkstation
               items={items}
               onSetItems={setItems}
@@ -523,7 +576,10 @@ export default function App() {
               targetLangName={targetLang.name}
             />
 
-            {/* Section 2: Dual Action Cards: Player + MP3 Downloader (Screenshot 3) */}
+            {/* Mid-Content In-Feed Google AdSense Slot (Between Workstation and Player) */}
+            <AdSenseSlot format="in-feed" />
+
+            {/* Section 2: Dual Action Cards: Player + MP3 Downloader */}
             <ContinuousPlayer
               items={items}
               currentIndex={currentIndex}
@@ -536,9 +592,10 @@ export default function App() {
               onSelectIndex={handleSelectIndex}
               onToggleMastered={handleToggleMastered}
               onUpdateSettings={handleUpdateSettings}
+              theme={theme}
             />
 
-            {/* Section 3: Discovered Vocabulary Table with Individual Pronunciation (Screenshot 2) */}
+            {/* Section 3: Discovered Vocabulary Table with Individual Pronunciation */}
             <WordListTable
               items={items}
               settings={settings}
@@ -567,21 +624,44 @@ export default function App() {
           />
         )}
 
-        {/* View 4: Chrome Extension Guide (Admin Only) */}
-        {currentView === 'extension' && isAdmin && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-4">
-            <h4 className="text-lg font-bold text-white">Google Chrome Extension Package</h4>
-            <p className="text-xs text-slate-400 max-w-lg mx-auto">
-              Download the official Manifest V3 extension package to pronounce, translate, and capture words directly from any webpage.
-            </p>
-            <button
-              onClick={() => setIsExtensionModalOpen(true)}
-              className="px-5 py-2.5 bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-400/20 hover:bg-amber-300 transition-all cursor-pointer"
-            >
-              Open Chrome Extension Manager
-            </button>
-          </div>
+        {/* Google AdSense Mandatory Legal & Information Pages */}
+        {currentView === 'privacy' && (
+          <PrivacyPolicyPage
+            onBack={() => setCurrentView('player')}
+            onNavigate={setCurrentView}
+          />
         )}
+
+        {currentView === 'terms' && (
+          <TermsPage
+            onBack={() => setCurrentView('player')}
+            onNavigate={setCurrentView}
+          />
+        )}
+
+        {currentView === 'about' && (
+          <AboutPage
+            onBack={() => setCurrentView('player')}
+            onNavigate={setCurrentView}
+          />
+        )}
+
+        {currentView === 'contact' && (
+          <ContactPage
+            onBack={() => setCurrentView('player')}
+            onNavigate={setCurrentView}
+          />
+        )}
+
+        {currentView === 'cookies' && (
+          <CookiePolicyPage
+            onBack={() => setCurrentView('player')}
+            onNavigate={setCurrentView}
+          />
+        )}
+
+        {/* Bottom Google AdSense Leaderboard Placement */}
+        <AdSenseSlot format="footer" />
       </main>
 
       {/* Modals */}
@@ -593,26 +673,108 @@ export default function App() {
         targetLangName={targetLang.name}
       />
 
-      <ChromeExtensionModal
-        isOpen={isExtensionModalOpen}
-        onClose={() => setIsExtensionModalOpen(false)}
-      />
+      {/* Professional AdSense-Compliant Multi-Column Footer */}
+      <footer className="border-t border-slate-900 bg-slate-950/80 pt-10 pb-8 text-xs text-slate-400 mt-12 transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+            {/* Col 1: Brand & Mission */}
+            <div className="md:col-span-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-amber-500 flex items-center justify-center text-white font-bold text-xs">
+                  <Volume2 className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-sm text-white">
+                  Translate Words, Texts &amp; Convert to MP3
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+                100% Free Lifetime global translation workstation. Repeat source words twice and translations once for rapid auditory memorization, with genuine offline MP3 generation.
+              </p>
+              <div className="text-xs text-slate-400 pt-1">
+                Official Web App:{' '}
+                <a href="https://www.transltor.xyz" className="text-amber-400 hover:underline font-semibold">
+                  www.transltor.xyz
+                </a>{' '}
+                <span className="text-slate-600">(doaa.transltor.xyz)</span>
+              </div>
+            </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>Translate Words, Texts &amp; Convert to MP3 — 100% Free Lifetime Translation &amp; Studio Neural Audio</p>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://uplcm.com/4/12174511"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <span>⭐ Sponsored Partner</span>
-            </a>
+            {/* Col 2: Navigation & Tools */}
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-white">Platform &amp; Tools</div>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li>
+                  <button onClick={() => setCurrentView('player')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Studio Workstation
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('flashcards')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Flashcards Deck (1 Word)
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('studio')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Voice Settings &amp; Speeds
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setIsBulkImportOpen(true)} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Bulk Word Importer (TXT/CSV)
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 3: AdSense Policy & Legal Pages */}
+            <div className="space-y-2.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-white">Legal &amp; Policies</div>
+              <ul className="space-y-1.5 text-xs text-slate-400">
+                <li>
+                  <button onClick={() => setCurrentView('privacy')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('terms')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Terms of Service
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('cookies')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Cookie Policy &amp; Consent
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('about')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    About Us
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setCurrentView('contact')} className="hover:text-amber-400 transition-colors cursor-pointer">
+                    Contact Us &amp; Support
+                  </button>
+                </li>
+                <li className="pt-1">
+                  <a href="mailto:doaa@transltor.xyz" className="text-amber-400/90 hover:underline font-mono text-[11px]">
+                    ✉ doaa@transltor.xyz
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* AdSense Notice & Copyright Bottom Bar */}
+          <div className="border-t border-slate-900 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-[11px]">
+            <p>
+              © 2026 Translate Words, Texts &amp; Convert to MP3 (www.transltor.xyz). All rights reserved.
+            </p>
+            <p className="text-slate-500">
+              Monetized via Google AdSense · Zero tracking of personal vocabulary
+            </p>
           </div>
         </div>
-      </footer>    </div>
+      </footer>
+    </div>
   );
 }

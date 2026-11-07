@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Translate words, texts & convert to MP3</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --card-bg: #0f172a;
+      --card-border: #1e293b;
+      --input-bg: #020617;
+      --input-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary-gradient: linear-gradient(135deg, #6366f1, #3b82f6);
+      --amber: #f59e0b;
+      --amber-hover: #fbbf24;
+      --amber-subtle: rgba(245, 158, 11, 0.15);
+      --indigo: #6366f1;
+      --indigo-subtle: rgba(99, 102, 241, 0.15);
+      --success: #10b981;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+    }
+
+    body.light-theme {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --input-bg: #f1f5f9;
+      --input-border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --amber-subtle: rgba(245, 158, 11, 0.2);
+      --indigo-subtle: rgba(99, 102, 241, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      width: 480px;
+      min-height: 640px;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* Header Bar */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: -0.2px;
+      color: var(--text);
+    }
+
+    .brand-title span {
+      color: var(--amber);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Pop-out Pin Button to keep window open */
+    .pin-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      padding: 4px 8px;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .pin-btn:hover {
+      background: var(--amber);
+      color: #020617;
+    }
+
+    .pin-badge {
+      display: none;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .theme-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 4px 7px;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .theme-btn:hover {
+      border-color: var(--amber);
+    }
+
+    /* Official Website Callout Banner */
+    .website-banner {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(245, 158, 11, 0.15));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .website-banner:hover {
+      border-color: var(--amber);
+      transform: translateY(-1px);
+    }
+
+    .website-tag {
+      background: var(--amber);
+      color: #020617;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tab-item {
+      flex: 1;
+      padding: 6px 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .tab-item.active {
+      background: var(--primary-gradient);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    select, input, textarea {
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--indigo);
+    }
+
+    select {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .swap-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--input-border);
+      color: var(--amber);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+      shrink: 0;
+    }
+
+    .swap-btn:hover {
+      border-color: var(--amber);
+      background: var(--amber-subtle);
+    }
+
+    textarea {
+      width: 100%;
+      height: 70px;
+      resize: none;
+      margin-bottom: 8px;
+    }
+
+    .result-box {
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 52px;
+      max-height: 110px;
+      overflow-y: auto;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11.5px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: #fff;
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: #020617;
+    }
+
+    .btn-amber:hover {
+      background: var(--amber-hover);
+    }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--indigo);
+    }
+
+    .btn-success {
+      background: #059669;
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+      white-space: nowrap;
+    }
+
+    /* Word deck list */
+    .deck-container {
+      max-height: 330px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 2px;
+    }
+
+    .word-row {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      transition: border-color 0.15s;
+    }
+
+    .word-row:hover {
+      border-color: var(--indigo);
+    }
+
+    .word-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .word-orig {
+      font-weight: 700;
+      font-size: 12.5px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .word-trans {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #34d399;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .word-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      shrink: 0;
+    }
+
+    .action-icon-btn {
+      padding: 4px 7px;
+      font-size: 10.5px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--card-bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .action-icon-btn:hover {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    /* Footer VIP Link */
+    .vip-footer {
+      margin-top: auto;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      color: #020617;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vip-footer:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 12px;
+      left: 14px;
+      right: 14px;
+      background: #0f172a;
+      border: 1px solid var(--indigo);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 999;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .toast.show {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .toast.success {
+      border-color: var(--success);
+      background: #064e3b;
+    }
+
+    .toast.error {
+      border-color: var(--danger);
+      background: #7f1d1d;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Bar with Pop-out Pin Button & Theme Toggle -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">🔊</div>
+      <div>
+        <div class="brand-title">Translate &amp; <span>Convert to MP3</span></div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Pin / Pop-out button to solve auto-closing issue -->
+      <button id="pinWindowBtn" class="pin-btn" title="Keep open permanently in floating window">
+        <span>📌 Pop-out Window</span>
+      </button>
+      <div id="pinBadge" class="pin-badge">📌 Floating Window</div>
+
+      <!-- Day / Night Mode Toggle -->
+      <button id="themeToggleBtn" class="theme-btn" title="Toggle Day/Night Mode">☀️ Mode</button>
+    </div>
+  </header>
+
+  <!-- Official Website Callout compliant with Chrome Store policies -->
+  <a id="websiteBannerLink" href="https://www.transltor.xyz" target="_blank" rel="noopener noreferrer" class="website-banner">
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <span>🌐 Official Web App:</span>
+      <strong style="color: var(--amber);">www.transltor.xyz</strong>
+    </div>
+    <span class="website-tag">Open Studio ↗</span>
+  </a>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs-bar">
+    <button id="tabTranslate" class="tab-item active">Translator</button>
+    <button id="tabDeck" class="tab-item">Vocab Deck (<span id="deckCountBadge">0</span>)</button>
+    <button id="tabImport" class="tab-item">Import Files</button>
+  </nav>
+
+  <!-- VIEW 1: TRANSLATOR -->
+  <main id="viewTranslate">
+    <div class="card">
+      <div class="row">
+        <select id="sourceLang">
+          <option value="auto">Detect Language (تلقائي)</option>
+          <option value="en" selected>English (US / UK)</option>
+          <option value="ar">Arabic (العربية)</option>
+          <option value="es">Spanish (Español)</option>
+          <option value="fr">French (Français)</option>
+          <option value="de">German (Deutsch)</option>
+          <option value="it">Italian (Italiano)</option>
+          <option value="tr">Turkish (Türkçe)</option>
+          <option value="pt">Portuguese (Português)</option>
+          <option value="ru">Russian (Русский)</option>
+          <option value="zh">Chinese (中文)</option>
+          <option value="ja">Japanese (日本語)</option>
+          <option value="ko">Korean (한국어)</option>
+          <option value="hi">Hindi (हिन्दी)</option>
+          <option value="id">Indonesian (Bahasa)</option>
+          <option value="nl">Dutch (Nederlands)</option>
+          <option value="pl">Polish (Polski)</option>
+          <option value="uk">Ukrainian (Українська)</option>
+          <option value="sv">Swedish (Svenska)</option>
+          <option value="el">Greek (Ελληνικά)</option>
+        </select>
+
+        <button id="swapBtn" class="swap-btn" title="Swap languages">⇄</button>
+
+        <select id="targetLang">
+          <option value="ar" selected>Arabic (العربية)</option>
+          <option value="en">English (US / UK)</option>
+          <option value="es">Spanish (Español)</option>
+          <option value="fr">French (Français)</option>
+          <option value="de">German (Deutsch)</option>
+          <option value="it">Italian (Italiano)</option>
+          <option value="tr">Turkish (Türkçe)</option>
+          <option value="pt">Portuguese (Português)</option>
+          <option value="ru">Russian (Русский)</option>
+          <option value="zh">Chinese (中文)</option>
+          <option value="ja">Japanese (日本語)</option>
+          <option value="ko">Korean (한국어)</option>
+          <option value="hi">Hindi (हिन्दी)</option>
+          <option value="id">Indonesian (Bahasa)</option>
+          <option value="nl">Dutch (Nederlands)</option>
+          <option value="pl">Polish (Polski)</option>
+          <option value="uk">Ukrainian (Українська)</option>
+          <option value="sv">Swedish (Svenska)</option>
+          <option value="el">Greek (Ελληνικά)</option>
+        </select>
+      </div>
+
+      <textarea id="sourceText" placeholder="Enter word or text to translate... (Ctrl+Enter to translate)"></textarea>
+
+      <div class="row" style="justify-content: space-between; margin-bottom: 8px;">
+        <button id="translateBtn" class="btn btn-primary" style="flex: 1;">⚡ Translate</button>
+        <button id="clearSourceBtn" class="btn btn-secondary" style="padding: 7px 10px;">Clear</button>
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 700;">TRANSLATION RESULT:</div>
+      <div id="resultBox" class="result-box">Translation will appear here instantly...</div>
+
+      <!-- Core Actions: Pronounce 2x/1x, Genuine MP3 Download, Add to Deck -->
+      <div class="btn-group">
+        <button id="listenBtn" class="btn btn-secondary" title="Pronounce 2x Source + 1x Target">
+          🔊 Listen (2x/1x)
+        </button>
+        <button id="downloadSingleMp3" class="btn btn-amber" title="Convert to Genuine MP3 file">
+          ⬇ Download MP3
+        </button>
+        <button id="addToListBtn" class="btn btn-secondary" title="Save to Vocabulary Deck">
+          + Add to Deck
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 2: VOCABULARY DECK -->
+  <main id="viewDeck" style="display: none;">
+    <div class="card">
+      <div class="row">
+        <input type="text" id="deckSearch" placeholder="Search words or translations..." style="flex: 1;" />
+        <button id="playAllBtn" class="btn btn-secondary" style="padding: 7px 10px;" title="Play entire playlist">▶ Play All</button>
+        <button id="downloadBatchMp3" class="btn btn-amber" style="padding: 7px 10px;" title="Download Batch MP3">⬇ Playlist MP3</button>
+      </div>
+
+      <div id="deckListContainer" class="deck-container">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="row" style="justify-content: space-between; margin-top: 10px; margin-bottom: 0;">
+        <span style="font-size: 11px; color: var(--text-muted);">2x Source + 1x Target Pronunciation Engine</span>
+        <button id="clearAllDeckBtn" class="btn btn-danger" style="padding: 4px 8px; font-size: 10px;">Clear Deck</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 3: IMPORT FILES -->
+  <main id="viewImport" style="display: none;">
+    <div class="card">
+      <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">
+        Import your study lists from TXT, CSV, TSV, or JSON. Built-in Windows-1256 auto-decoder preserves Arabic characters perfectly.
+      </p>
+
+      <div class="row">
+        <button id="uploadFileBtn" class="btn btn-primary" style="flex: 1;">📂 Choose File (.txt, .csv, .tsv, .json)</button>
+        <input type="file" id="fileUploadInput" accept=".txt,.csv,.tsv,.json" style="display: none;" />
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-muted); margin: 6px 0 4px 0;">Or Paste Word Pairs (word [tab/comma/dash] translation):</div>
+      <textarea id="bulkPasteText" placeholder="apple - تفاحة&#10;car - سيارة&#10;book - كتاب" style="height: 100px;"></textarea>
+
+      <button id="submitImportBtn" class="btn btn-amber" style="width: 100%;">📥 Import Words to Deck</button>
+    </div>
+  </main>
+
+  <!-- Official Web Application Banner -->
+  <a id="partnerBannerLink" href="https://www.transltor.xyz" target="_blank" rel="noopener noreferrer" class="vip-footer">
+    <span>🌐 Explore Full Workstation &amp; Voice Studio</span>
+    <span>www.transltor.xyz ↗</span>
+  </a>
+
+  <!-- Toast Message -->
+  <div id="statusToast" class="toast"></div>
+
+  <!-- Scripts: First LAME MP3 Encoder, then Popup Controller -->
+  <script src="lame.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

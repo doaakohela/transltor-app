@@ -100,23 +100,15 @@ export function resolveVoiceAndProsody(voice: string, lang?: string): VoiceConfi
   return { voiceName: 'en-US-GuyNeural', prosody: { pitch: '0Hz', rate: '0%' } };
 }
 
-/**
- * Generate Neural AI Audio for a single text phrase with prosody
- */
-export async function generateSpeechAudio(
+async function executeTtsStream(
   text: string,
-  voiceConfig: VoiceConfig
+  voiceName: string,
+  prosody?: { pitch?: string; rate?: string },
+  cacheKey?: string
 ): Promise<Buffer> {
-  const cleanText = text.trim();
-  const cacheKey = `${voiceConfig.voiceName}_${voiceConfig.prosody?.pitch || ''}_${voiceConfig.prosody?.rate || ''}_${cleanText}`;
-
-  if (ttsCache.has(cacheKey)) {
-    return Buffer.from(ttsCache.get(cacheKey)!, 'base64');
-  }
-
   const tts = new MsEdgeTTS();
-  await tts.setMetadata(voiceConfig.voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-  const result = await tts.toStream(cleanText, voiceConfig.prosody);
+  await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+  const result = await tts.toStream(text, prosody);
   const chunks: Buffer[] = [];
 
   return new Promise((resolve, reject) => {
@@ -130,7 +122,9 @@ export async function generateSpeechAudio(
         // ignore
       }
       const full = Buffer.concat(chunks);
-      ttsCache.set(cacheKey, full.toString('base64'));
+      if (cacheKey) {
+        ttsCache.set(cacheKey, full.toString('base64'));
+      }
       resolve(full);
     });
     result.audioStream.on('error', (err: any) => {
@@ -142,6 +136,35 @@ export async function generateSpeechAudio(
       reject(err);
     });
   });
+}
+
+/**
+ * Generate Neural AI Audio for a single text phrase with prosody and resilient fallback
+ */
+export async function generateSpeechAudio(
+  text: string,
+  voiceConfig: VoiceConfig
+): Promise<Buffer> {
+  const cleanText = text.trim();
+  const cacheKey = `${voiceConfig.voiceName}_${voiceConfig.prosody?.pitch || ''}_${voiceConfig.prosody?.rate || ''}_${cleanText}`;
+
+  if (ttsCache.has(cacheKey)) {
+    return Buffer.from(ttsCache.get(cacheKey)!, 'base64');
+  }
+
+  try {
+    return await executeTtsStream(cleanText, voiceConfig.voiceName, voiceConfig.prosody, cacheKey);
+  } catch (err) {
+    console.warn(`TTS generation with voice ${voiceConfig.voiceName} failed, trying fallback:`, err);
+    if (voiceConfig.voiceName !== 'en-US-GuyNeural') {
+      try {
+        return await executeTtsStream(cleanText, 'en-US-GuyNeural', { pitch: '0Hz', rate: '0%' }, cacheKey);
+      } catch (fallbackErr) {
+        console.warn('Fallback voice also failed:', fallbackErr);
+      }
+    }
+    return getValidMp3Silence(400);
+  }
 }
 
 export interface FullWordParams {
@@ -168,8 +191,8 @@ export async function generateFullWordSequence(params: FullWordParams) {
   const tgtVoice = params.targetVoice || params.arVoice || 'ar-EG-ShakirNeural';
   const pauseSrc = params.pauseSourceMs ?? params.pauseEnMs ?? 600;
   const pauseTgt = params.pauseTargetMs ?? params.pauseArMs ?? 800;
-  const srcReps = Math.max(1, Number(params.sourceRepeats) || 2);
-  const tgtReps = Math.max(0, Number(params.targetRepeats) || 1);
+  const srcReps = params.sourceRepeats !== undefined ? Math.max(1, Number(params.sourceRepeats)) : 2;
+  const tgtReps = params.targetRepeats !== undefined ? Math.max(1, Number(params.targetRepeats)) : 1;
 
   if (!src && !tgt) {
     throw new Error('Source or target text is required');
@@ -274,8 +297,8 @@ export async function generateBatchAudio(params: BatchAudioParams) {
   const pauseBetweenWordsMs = params.pauseBetweenWordsMs ?? 1400;
   const filename = params.filename || 'vocabulary_audio_master.mp3';
 
-  const srcReps = Math.max(1, Number(params.sourceRepeats) || 2);
-  const tgtReps = Math.max(0, Number(params.targetRepeats) || 1);
+  const srcReps = params.sourceRepeats !== undefined ? Math.max(1, Number(params.sourceRepeats)) : 2;
+  const tgtReps = params.targetRepeats !== undefined ? Math.max(1, Number(params.targetRepeats)) : 1;
 
   const srcConfig = resolveVoiceAndProsody(srcVoice);
   const tgtConfig = resolveVoiceAndProsody(tgtVoice);
