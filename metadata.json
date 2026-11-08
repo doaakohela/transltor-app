@@ -1,6 +1,6 @@
 {
-  "name": "SpeakUS & Masry - Bilingual Pronunciation Trainer",
-  "description": "نطق الكلمات الإنجليزية بلكنة أمريكية مرتين وترجمتها بلكنة مصرية طبيعية مع إدخال مخصص وبطاقات تفاعلية",
+  "name": "Translate Words, Texts & Convert to MP3",
+  "description": "Translate words and texts across 140+ world languages with neural studio voice pronunciation, dual repetition memorization, interactive flashcards, and MP3 audio downloads.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

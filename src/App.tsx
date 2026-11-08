@@ -46,6 +46,7 @@ import { AboutPage } from './pages/AboutPage.tsx';
 import { ContactPage } from './pages/ContactPage.tsx';
 import { CookiePolicyPage } from './pages/CookiePolicyPage.tsx';
 import { INITIAL_VOCABULARY, PRESET_PACKS } from './data/presets.ts';
+import { SeoFaqSection } from './components/SeoFaqSection.tsx';
 
 const DEFAULT_SETTINGS: AudioSettings = {
   sourceLang: 'en-US',
@@ -70,7 +71,48 @@ const DEFAULT_SETTINGS: AudioSettings = {
 };
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<AppView>('player');
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    try {
+      const path = (window.location.pathname || '').replace(/^\//, '').toLowerCase();
+      const hash = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
+      const target = path || hash;
+      if (['privacy', 'terms', 'about', 'contact', 'cookies', 'flashcards', 'studio'].includes(target)) {
+        return target as AppView;
+      }
+    } catch {
+      // fallback
+    }
+    return 'player';
+  });
+
+  // Keep browser history and URL in sync for SEO and crawler navigation
+  useEffect(() => {
+    try {
+      const currentPath = window.location.pathname.replace(/^\//, '').toLowerCase();
+      const expectedPath = currentView === 'player' ? '/' : `/${currentView}`;
+      if (currentPath !== expectedPath.replace(/^\//, '')) {
+        window.history.pushState(null, '', expectedPath);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch {
+      // ignore
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = (window.location.pathname || '').replace(/^\//, '').toLowerCase();
+      const hash = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
+      const target = path || hash;
+      if (['privacy', 'terms', 'about', 'contact', 'cookies', 'flashcards', 'studio'].includes(target)) {
+        setCurrentView(target as AppView);
+      } else {
+        setCurrentView('player');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Load items from localStorage or defaults
   const [items, setItems] = useState<VocabularyItem[]>(() => {
@@ -604,6 +646,9 @@ export default function App() {
               onUpdateItem={handleUpdateItem}
               onPlayItem={handlePlayItem}
             />
+
+            {/* Semantic SEO & FAQ Guide for Search Engine Ranking */}
+            <SeoFaqSection theme={theme} />
           </div>
         )}
 

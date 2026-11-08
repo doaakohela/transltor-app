@@ -32,6 +32,27 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.resolve(__dirname, 'public')));
 
+// Explicit SEO routes ensuring correct MIME types for Google Search Console and crawlers
+app.get('/sitemap.xml', (_req, res) => {
+  res.header('Content-Type', 'application/xml; charset=utf-8');
+  res.sendFile(path.resolve(__dirname, 'public', 'sitemap.xml'));
+});
+
+app.get('/sitemap.txt', (_req, res) => {
+  res.header('Content-Type', 'text/plain; charset=utf-8');
+  res.sendFile(path.resolve(__dirname, 'public', 'sitemap.txt'));
+});
+
+app.get('/robots.txt', (_req, res) => {
+  res.header('Content-Type', 'text/plain; charset=utf-8');
+  res.sendFile(path.resolve(__dirname, 'public', 'robots.txt'));
+});
+
+app.get('/ads.txt', (_req, res) => {
+  res.header('Content-Type', 'text/plain; charset=utf-8');
+  res.sendFile(path.resolve(__dirname, 'public', 'ads.txt'));
+});
+
 /**
  * API: Speak a single word or preview phrase in ANY world language
  */

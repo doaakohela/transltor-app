@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://transltor.xyz/sitemap.xml
+Sitemap: https://www.transltor.xyz/sitemap.xml
+Sitemap: https://www.transltor.xyz/sitemap.txt

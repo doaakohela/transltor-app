@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Translate words, texts & convert to MP3",
+  "name": "Translate Words, Texts & Convert to MP3",
   "version": "1.1.2",
-  "description": "Translate text across 100+ languages, listen to 2x/1x pronunciation, study vocabulary, and download genuine MP3 audio.",
+  "description": "Translate words and texts across 140+ languages, listen to 2x/1x pronunciation, study vocabulary, and download genuine MP3 audio.",
   "permissions": [
     "storage",
     "contextMenus",
@@ -14,7 +14,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Translate words, texts & convert to MP3",
+    "default_title": "Translate Words, Texts & Convert to MP3",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
