@@ -1,5 +1,17 @@
 User-agent: *
 Allow: /
 
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
 Sitemap: https://www.transltor.xyz/sitemap.xml
 Sitemap: https://www.transltor.xyz/sitemap.txt
