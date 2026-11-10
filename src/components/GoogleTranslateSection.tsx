@@ -295,21 +295,77 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           : 'bg-slate-900/95 border-slate-800'
       }`}
     >
-      {/* Top Language Bar (Clean Google Translate Layout) */}
+      {/* Mobile-Only Compact Language Bar (< 768px): 2 clear language buttons + swap */}
       <div
-        className={`px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b ${
+        className={`flex md:hidden items-center justify-between gap-2 px-3 py-2.5 border-b ${
+          isLight
+            ? 'bg-slate-50 border-slate-200'
+            : 'bg-slate-950/70 border-slate-800'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => setActivePicker('source')}
+          className={`flex-1 min-w-0 min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-1.5 cursor-pointer ${
+            isLight
+              ? 'bg-indigo-50 text-indigo-950 border border-indigo-200'
+              : 'bg-indigo-950/70 text-indigo-200 border border-indigo-500/40'
+          }`}
+          title="Select source language"
+        >
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className="shrink-0">{currentSourceLang.flag}</span>
+            <span className="truncate">{currentSourceLang.name}</span>
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`} />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSwap}
+          className={`min-w-[44px] min-h-[44px] p-2 rounded-xl border transition-all active:scale-95 flex items-center justify-center shrink-0 cursor-pointer ${
+            isLight
+              ? 'bg-white text-slate-800 border-slate-300 shadow-xs'
+              : 'bg-slate-900 text-slate-300 border-slate-800'
+          }`}
+          title="Swap source and target languages"
+        >
+          <ArrowLeftRight className="w-4 h-4 text-amber-500" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActivePicker('target')}
+          className={`flex-1 min-w-0 min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between gap-1.5 cursor-pointer ${
+            isLight
+              ? 'bg-amber-100 text-amber-950 border border-amber-300'
+              : 'bg-amber-950/70 text-amber-300 border border-amber-500/50'
+          }`}
+          title="Select target language"
+        >
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className="shrink-0">{currentTargetLang.flag}</span>
+            <span className="truncate">{currentTargetLang.name}</span>
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-700' : 'text-amber-400'}`} />
+        </button>
+      </div>
+
+      {/* Tablet & Desktop Top Language Bar (>= 768px) */}
+      <div
+        className={`hidden md:flex px-4 lg:px-6 py-3 md:flex-nowrap lg:flex-wrap items-center lg:items-start justify-between gap-2 lg:gap-3 border-b ${
           isLight
             ? 'bg-slate-50 border-slate-200'
             : 'bg-slate-950/70 border-slate-800'
         }`}
       >
         {/* Source Language Controls */}
-        <div className="flex items-center flex-wrap gap-1.5 flex-1 min-w-[280px]">
+        <div className="flex items-center flex-nowrap lg:flex-wrap gap-1.5 flex-1 min-w-0">
           {/* Detect Language Button */}
           <button
             type="button"
             onClick={() => setIsAutoDetect(true)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 lg:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
               isAutoDetect
                 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30'
                 : isLight
@@ -317,8 +373,8 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate max-w-[155px] lg:max-w-none">
               Detect language {isAutoDetect && sourceText ? `(${currentSourceLang.name})` : ''}
             </span>
           </button>
@@ -327,7 +383,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           <button
             type="button"
             onClick={() => setActivePicker('source')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3 lg:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
               !isAutoDetect
                 ? isLight
                   ? 'bg-indigo-50 text-indigo-950 border border-indigo-300 shadow-xs'
@@ -338,9 +394,9 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             }`}
             title="Click to choose from all world languages"
           >
-            <span>{currentSourceLang.flag}</span>
-            <span>{currentSourceLang.name}</span>
-            <ChevronDown className={`w-4 h-4 ml-0.5 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`} />
+            <span className="shrink-0">{currentSourceLang.flag}</span>
+            <span className="truncate max-w-[130px] lg:max-w-none">{currentSourceLang.name}</span>
+            <ChevronDown className={`w-4 h-4 ml-0.5 shrink-0 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`} />
           </button>
 
           {/* Quick Popular Source Language Pills */}
@@ -359,7 +415,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                       sourceVoice: fullLang.defaultVoice,
                     });
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     isSelected
                       ? isLight
                         ? 'bg-indigo-100 text-indigo-950 border border-indigo-300 font-bold'
@@ -375,11 +431,11 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             })}
           </div>
 
-          {/* Full List Button */}
+          {/* Full List Button (Shown on Desktop lg+; on Tablet clicking language button opens full list) */}
           <button
             type="button"
             onClick={() => setActivePicker('source')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+            className={`hidden lg:flex px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors items-center gap-1 cursor-pointer ${
               isLight
                 ? 'text-slate-700 hover:text-indigo-700 hover:bg-slate-200'
                 : 'text-slate-400 hover:text-indigo-300 hover:bg-slate-800/60'
@@ -387,7 +443,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             title="Browse all world languages"
           >
             <span>All Languages</span>
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
           </button>
         </div>
 
@@ -406,21 +462,21 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
         </button>
 
         {/* Target Language Controls */}
-        <div className="flex items-center flex-wrap gap-1.5 flex-1 justify-start sm:justify-end min-w-[280px]">
+        <div className="flex items-center flex-nowrap lg:flex-wrap gap-1.5 flex-1 justify-end min-w-0">
           {/* Active Target Language Button (Click opens full picker) */}
           <button
             type="button"
             onClick={() => setActivePicker('target')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-3 lg:px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
               isLight
                 ? 'bg-amber-100 text-amber-950 border border-amber-300 hover:border-amber-400'
                 : 'bg-amber-950/70 text-amber-300 border border-amber-500/50 hover:border-amber-400'
             }`}
             title="Click to choose target language from all world languages"
           >
-            <span>{currentTargetLang.flag}</span>
-            <span>{currentTargetLang.name}</span>
-            <ChevronDown className={`w-4 h-4 ml-0.5 ${isLight ? 'text-amber-700' : 'text-amber-400'}`} />
+            <span className="shrink-0">{currentTargetLang.flag}</span>
+            <span className="truncate max-w-[140px] lg:max-w-none">{currentTargetLang.name}</span>
+            <ChevronDown className={`w-4 h-4 ml-0.5 shrink-0 ${isLight ? 'text-amber-700' : 'text-amber-400'}`} />
           </button>
 
           {/* Quick Popular Target Language Pills */}
@@ -438,7 +494,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                       targetVoice: fullLang.defaultVoice,
                     });
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     isSelected
                       ? isLight
                         ? 'bg-amber-100 text-amber-950 border border-amber-300 font-bold'
@@ -454,11 +510,11 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             })}
           </div>
 
-          {/* Full List Button */}
+          {/* Full List Button (Shown on Desktop lg+; on Tablet clicking language button opens full list) */}
           <button
             type="button"
             onClick={() => setActivePicker('target')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
+            className={`hidden lg:flex px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors items-center gap-1 cursor-pointer ${
               isLight
                 ? 'text-slate-700 hover:text-amber-700 hover:bg-slate-200'
                 : 'text-slate-400 hover:text-amber-300 hover:bg-slate-800/60'
@@ -466,7 +522,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             title="Browse all world languages"
           >
             <span>All Languages</span>
-            <ChevronDown className="w-3.5 h-3.5" />
+            <ChevronDown className="w-3.5 h-3.5 shrink-0" />
           </button>
         </div>
       </div>
@@ -547,9 +603,28 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             </div>
           </div>
 
-          {/* Quick Popular Pills */}
+          {/* Quick Popular Pills + Auto-Detect Option for Source Picker */}
           {!pickerSearch && (
             <div className="pb-3 flex items-center gap-2 overflow-x-auto">
+              {activePicker === 'source' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAutoDetect(true);
+                    setActivePicker(null);
+                  }}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer border ${
+                    isAutoDetect
+                      ? 'bg-indigo-600 text-white border-indigo-500'
+                      : isLight
+                      ? 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-900'
+                      : 'bg-indigo-950/80 hover:bg-indigo-900 border-indigo-700 text-indigo-200'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Detect language</span>
+                </button>
+              )}
               <span
                 className={`text-[11px] font-bold uppercase tracking-wider shrink-0 ${
                   isLight ? 'text-slate-500' : 'text-slate-400'

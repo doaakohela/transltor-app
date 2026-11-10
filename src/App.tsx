@@ -474,11 +474,11 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
             {/* In-Place Maximize Window Toggle */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 cursor-pointer border ${
                 theme === 'light'
                   ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-xs'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
@@ -492,14 +492,14 @@ export default function App() {
               href="https://www.transltor.xyz"
               target="_blank"
               rel="noopener noreferrer"
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1 cursor-pointer border ${
                 theme === 'light'
                   ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-indigo-200 font-bold shadow-xs'
                   : 'bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 border-indigo-800/60'
               }`}
               title="Visit Official Domain"
             >
-              <Globe className={`w-3.5 h-3.5 ${theme === 'light' ? 'text-indigo-600' : 'text-indigo-400'}`} />
+              <Globe className={`w-3.5 h-3.5 shrink-0 ${theme === 'light' ? 'text-indigo-600' : 'text-indigo-400'}`} />
               <span>www.transltor.xyz ↗</span>
             </a>
           </div>

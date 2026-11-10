@@ -185,20 +185,21 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
           <div className="space-y-5">
             {/* Header */}
             <div
-              className={`flex items-center justify-between border-b pb-3 ${
+              className={`flex items-center justify-between gap-2 border-b pb-3 ${
                 isLight ? 'border-slate-200' : 'border-slate-800'
               }`}
             >
-              <div>
+              <div className="min-w-0">
                 <span className={`text-[11px] font-bold uppercase tracking-wider block ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`}>
                   Live Listening
                 </span>
-                <h4 className={`text-base font-bold tracking-tight mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  Live Continuous Player
+                <h4 className={`text-base font-bold tracking-tight mt-0.5 whitespace-nowrap truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  <span className="sm:hidden">Live Player</span>
+                  <span className="hidden sm:inline">Live Continuous Player</span>
                 </h4>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleToggleRepetitionPattern}
@@ -207,7 +208,7 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                       ? 'Current: 2x Word + 1x Translation. Click to switch to: 1x Word + 2x Translation'
                       : 'Current: 1x Word + 2x Translation. Click to switch to: 2x Word + 1x Translation'
                   }
-                  className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:scale-105 active:scale-95 ${
+                  className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs hover:scale-105 active:scale-95 ${
                     is2x1x
                       ? isLight
                         ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-200'
@@ -217,13 +218,14 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                       : 'bg-amber-950/80 hover:bg-amber-900 text-amber-300 border-amber-600/80'
                   }`}
                 >
-                  <Repeat className={`w-3.5 h-3.5 ${is2x1x ? (isLight ? 'text-indigo-700' : 'text-indigo-400') : (isLight ? 'text-amber-700' : 'text-amber-400')}`} />
-                  <span>{is2x1x ? '2x Word + 1x Trans' : '1x Word + 2x Trans'}</span>
+                  <Repeat className={`w-3.5 h-3.5 shrink-0 ${is2x1x ? (isLight ? 'text-indigo-700' : 'text-indigo-400') : (isLight ? 'text-amber-700' : 'text-amber-400')}`} />
+                  <span className="sm:hidden">{is2x1x ? '2x+1x' : '1x+2x'}</span>
+                  <span className="hidden sm:inline">{is2x1x ? '2x Word + 1x Trans' : '1x Word + 2x Trans'}</span>
                 </button>
 
                 <button
                   onClick={() => setShowPlaylist(!showPlaylist)}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  className={`p-1.5 rounded-lg shrink-0 transition-colors cursor-pointer ${
                     isLight ? 'text-slate-600 hover:text-slate-950 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                   title="Toggle playlist queue"
@@ -343,35 +345,37 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
           <div className="space-y-5">
             {/* Header */}
             <div
-              className={`flex items-center justify-between border-b pb-3 ${
+              className={`flex items-center justify-between gap-2 border-b pb-3 ${
                 isLight ? 'border-slate-200' : 'border-slate-800'
               }`}
             >
-              <div>
+              <div className="min-w-0">
                 <span className={`text-[11px] font-bold uppercase tracking-wider block ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
                   Studio MP3 Files
                 </span>
-                <h4 className={`text-base font-bold tracking-tight mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  Download MP3 Audio Files
+                <h4 className={`text-base font-bold tracking-tight mt-0.5 whitespace-nowrap truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  <span className="sm:hidden">Download MP3</span>
+                  <span className="hidden sm:inline">Download MP3 Audio Files</span>
                 </h4>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleToggleRepetitionPattern}
                   title="Switch repetition mode (2x+1x ⇄ 1x+2x)"
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded-lg border transition-colors cursor-pointer flex items-center gap-1 shadow-xs ${
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-lg border whitespace-nowrap shrink-0 transition-colors cursor-pointer flex items-center gap-1 shadow-xs ${
                     isLight
                       ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300'
                       : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
                   }`}
                 >
-                  <Repeat className="w-3 h-3 text-amber-500" />
+                  <Repeat className="w-3 h-3 text-amber-500 shrink-0" />
                   <span>{is2x1x ? '2x+1x' : '1x+2x'}</span>
                 </button>
-                <span className="px-2.5 py-1 text-[10px] font-bold bg-amber-400 text-slate-950 rounded-lg shadow-xs">
-                  Pure MP3 Format
+                <span className="px-2.5 py-1 text-[10px] font-bold bg-amber-400 text-slate-950 rounded-lg shadow-xs whitespace-nowrap shrink-0">
+                  <span className="sm:hidden">MP3</span>
+                  <span className="hidden sm:inline">Pure MP3 Format</span>
                 </span>
               </div>
             </div>
