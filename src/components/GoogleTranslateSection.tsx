@@ -353,19 +353,19 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
 
       {/* Tablet & Desktop Top Language Bar (>= 768px) */}
       <div
-        className={`hidden md:flex px-4 lg:px-6 py-3 md:flex-nowrap lg:flex-wrap items-center lg:items-start justify-between gap-2 lg:gap-3 border-b ${
+        className={`hidden md:flex px-3 lg:px-5 py-3 flex-nowrap items-center justify-between gap-2 lg:gap-3 border-b ${
           isLight
             ? 'bg-slate-50 border-slate-200'
             : 'bg-slate-950/70 border-slate-800'
         }`}
       >
         {/* Source Language Controls */}
-        <div className="flex items-center flex-nowrap lg:flex-wrap gap-1.5 flex-1 min-w-0">
+        <div className="flex items-center flex-nowrap gap-1 lg:gap-1.5 flex-1 min-w-0">
           {/* Detect Language Button */}
           <button
             type="button"
             onClick={() => setIsAutoDetect(true)}
-            className={`px-3 lg:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer border ${
+            className={`px-2.5 lg:px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer border ${
               isAutoDetect
                 ? isLight
                   ? 'bg-[#174ea6] hover:bg-[#1557b0] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-md shadow-blue-500/25'
@@ -380,7 +380,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                 isLight ? 'text-white' : 'text-amber-400'
               }`}
             />
-            <span className="truncate max-w-[155px] lg:max-w-none">
+            <span className="truncate max-w-[105px] lg:max-w-[115px] xl:max-w-[140px]">
               Detect language {isAutoDetect && sourceText ? `(${currentSourceLang.name})` : ''}
             </span>
           </button>
@@ -389,7 +389,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           <button
             type="button"
             onClick={() => setActivePicker('source')}
-            className={`px-3 lg:px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer border ${
+            className={`px-2.5 lg:px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer border ${
               !isAutoDetect
                 ? isLight
                   ? 'bg-[#174ea6] hover:bg-[#1557b0] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-xs'
@@ -401,47 +401,15 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             title="Click to choose from all world languages"
           >
             <span className="shrink-0">{currentSourceLang.flag}</span>
-            <span className="truncate max-w-[130px] lg:max-w-none">{currentSourceLang.name}</span>
-            <ChevronDown className={`w-4 h-4 ml-0.5 shrink-0 ${isLight ? 'text-white' : 'text-indigo-400'}`} />
+            <span className="truncate max-w-[95px] lg:max-w-[110px] xl:max-w-[135px]">{currentSourceLang.name}</span>
+            <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-white' : 'text-indigo-400'}`} />
           </button>
-
-          {/* Quick Popular Source Language Pills */}
-          <div className="hidden lg:flex items-center gap-1">
-            {POPULAR_LANGUAGES.slice(0, 3).map((lang) => {
-              const isSelected = !isAutoDetect && settings.sourceLang === lang.code;
-              return (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => {
-                    setIsAutoDetect(false);
-                    const fullLang = getLanguageByCode(lang.code);
-                    onUpdateSettings({
-                      sourceLang: fullLang.code,
-                      sourceVoice: fullLang.defaultVoice,
-                    });
-                  }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
-                    isSelected
-                      ? isLight
-                        ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
-                        : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40 font-semibold'
-                      : isLight
-                      ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
-                  }`}
-                >
-                  {lang.name}
-                </button>
-              );
-            })}
-          </div>
 
           {/* Full List Button (Shown on Desktop lg+; on Tablet clicking language button opens full list) */}
           <button
             type="button"
             onClick={() => setActivePicker('source')}
-            className={`hidden lg:flex px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors items-center gap-1 cursor-pointer border ${
+            className={`hidden lg:flex px-2.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors items-center gap-1 cursor-pointer border ${
               isLight
                 ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
                 : 'text-slate-400 hover:text-indigo-300 hover:bg-slate-800/60 border-transparent'
@@ -468,12 +436,12 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
         </button>
 
         {/* Target Language Controls */}
-        <div className="flex items-center flex-nowrap lg:flex-wrap gap-1.5 flex-1 justify-end min-w-0">
+        <div className="flex items-center flex-nowrap gap-1 lg:gap-1.5 flex-1 justify-end min-w-0">
           {/* Active Target Language Button (Click opens full picker) */}
           <button
             type="button"
             onClick={() => setActivePicker('target')}
-            className={`px-3 lg:px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer border ${
+            className={`px-2.5 lg:px-3 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer border ${
               isLight
                 ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
                 : 'bg-amber-950/70 text-amber-300 border-amber-500/50 hover:border-amber-400'
@@ -481,46 +449,15 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             title="Click to choose target language from all world languages"
           >
             <span className="shrink-0">{currentTargetLang.flag}</span>
-            <span className="truncate max-w-[140px] lg:max-w-none">{currentTargetLang.name}</span>
-            <ChevronDown className={`w-4 h-4 ml-0.5 shrink-0 ${isLight ? 'text-white' : 'text-amber-400'}`} />
+            <span className="truncate max-w-[120px] lg:max-w-[150px] xl:max-w-[180px]">{currentTargetLang.name}</span>
+            <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-white' : 'text-amber-400'}`} />
           </button>
-
-          {/* Quick Popular Target Language Pills */}
-          <div className="hidden lg:flex items-center gap-1">
-            {POPULAR_LANGUAGES.slice(0, 3).map((lang) => {
-              const isSelected = settings.targetLang === lang.code;
-              return (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => {
-                    const fullLang = getLanguageByCode(lang.code);
-                    onUpdateSettings({
-                      targetLang: fullLang.code,
-                      targetVoice: fullLang.defaultVoice,
-                    });
-                  }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
-                    isSelected
-                      ? isLight
-                        ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
-                        : 'bg-amber-400/20 text-amber-300 border-amber-400/40 font-semibold'
-                      : isLight
-                      ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
-                  }`}
-                >
-                  {lang.name}
-                </button>
-              );
-            })}
-          </div>
 
           {/* Full List Button (Shown on Desktop lg+; on Tablet clicking language button opens full list) */}
           <button
             type="button"
             onClick={() => setActivePicker('target')}
-            className={`hidden lg:flex px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors items-center gap-1 cursor-pointer border ${
+            className={`hidden lg:flex px-2.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-colors items-center gap-1 cursor-pointer border ${
               isLight
                 ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
                 : 'text-slate-400 hover:text-amber-300 hover:bg-slate-800/60 border-transparent'
