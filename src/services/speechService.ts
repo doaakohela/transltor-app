@@ -2,33 +2,159 @@ import { AudioSettings, PlaybackStage, VocabularyItem } from '../types.ts';
 
 export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+// Tiny valid silent WAV used to unlock HTMLAudioElement synchronously on user gesture (iOS/Android/Safari/Chrome)
+const SILENT_UNLOCK_WAV =
+  'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
 class SpeechService {
-  private currentAudioElement: HTMLAudioElement | null = null;
+  private sharedAudio: HTMLAudioElement | null = null;
+  private activeObjectUrl: string | null = null;
+  private activeResolve: (() => void) | null = null;
+  private activeTimeoutId: number | null = null;
+  private activeUtterance: SpeechSynthesisUtterance | null = null;
+  private sequenceCache = new Map<string, string>();
   private isCancelled: boolean = false;
+
+  /**
+   * Must be called synchronously inside a click/tap handler before async fetch loops
+   * so Mobile Safari, Android Chrome, Tablet & Desktop browsers permit continuous audio playback.
+   */
+  public unlockAudio(): void {
+    this.isCancelled = false;
+    try {
+      if (!this.sharedAudio) {
+        this.sharedAudio = new Audio();
+        this.sharedAudio.preload = 'auto';
+      }
+      // Play tiny silent WAV synchronously inside the user gesture to unlock the element
+      this.sharedAudio.src = SILENT_UNLOCK_WAV;
+      this.sharedAudio.volume = 0.01;
+      const playPromise = this.sharedAudio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          // Ignore unlock errors on browsers that don't require it
+        });
+      }
+      setTimeout(() => {
+        if (this.sharedAudio) {
+          this.sharedAudio.volume = 1;
+        }
+      }, 40);
+    } catch {
+      // ignore unlock errors
+    }
+
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private clearActiveAudioHandlers(resolvePending = true): void {
+    if (this.activeTimeoutId !== null) {
+      window.clearTimeout(this.activeTimeoutId);
+      this.activeTimeoutId = null;
+    }
+
+    if (this.sharedAudio) {
+      this.sharedAudio.onended = null;
+      this.sharedAudio.onerror = null;
+      try {
+        this.sharedAudio.pause();
+        this.sharedAudio.currentTime = 0;
+      } catch {
+        // ignore
+      }
+    }
+
+    if (this.activeObjectUrl) {
+      try {
+        URL.revokeObjectURL(this.activeObjectUrl);
+      } catch {
+        // ignore
+      }
+      this.activeObjectUrl = null;
+    }
+
+    if (resolvePending && this.activeResolve) {
+      const done = this.activeResolve;
+      this.activeResolve = null;
+      done();
+    } else {
+      this.activeResolve = null;
+    }
+  }
 
   public playAudioFromBase64(base64: string, mimeType = 'audio/mp3'): Promise<void> {
     return new Promise((resolve) => {
-      this.stop();
-      this.isCancelled = false;
+      // Clean up only the previous track's audio without flipping isCancelled = true
+      this.clearActiveAudioHandlers(true);
+      if (this.isCancelled) {
+        resolve();
+        return;
+      }
 
-      const audio = new Audio(`data:${mimeType};base64,${base64}`);
-      this.currentAudioElement = audio;
+      if (!this.sharedAudio) {
+        this.sharedAudio = new Audio();
+        this.sharedAudio.preload = 'auto';
+      }
 
-      audio.onended = () => {
-        this.currentAudioElement = null;
+      const audio = this.sharedAudio;
+      audio.volume = 1;
+
+      let audioSrc: string;
+      try {
+        const bin = atob(base64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) {
+          bytes[i] = bin.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: mimeType === 'audio/mp3' ? 'audio/mpeg' : mimeType });
+        const objectUrl = URL.createObjectURL(blob);
+        this.activeObjectUrl = objectUrl;
+        audioSrc = objectUrl;
+      } catch {
+        audioSrc = `data:${mimeType};base64,${base64}`;
+      }
+
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        this.clearActiveAudioHandlers(false);
         resolve();
       };
 
+      this.activeResolve = finish;
+
+      audio.onended = finish;
       audio.onerror = (e) => {
-        this.currentAudioElement = null;
         console.warn('Audio playback error', e);
-        resolve();
+        finish();
       };
 
-      audio.play().catch((err) => {
-        console.warn('Playback interrupted:', err);
-        resolve();
-      });
+      // Safety fallback in case a mobile browser drops onended
+      this.activeTimeoutId = window.setTimeout(() => {
+        finish();
+      }, 45000);
+
+      audio.src = audioSrc;
+      try {
+        audio.load();
+      } catch {
+        // ignore
+      }
+
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch((err) => {
+          console.warn('Playback interrupted or blocked:', err);
+          finish();
+        });
+      }
     });
   }
 
@@ -46,6 +172,7 @@ class SpeechService {
 
   // Audition or speak a single word / phrase in ANY world language
   public async speakText(text: string, lang = 'en', voiceName = 'en-US-GuyNeural'): Promise<void> {
+    this.isCancelled = false;
     try {
       const baseUrl = this.getBaseUrl();
       const response = await fetch(`${baseUrl}/api/tts/speak`, {
@@ -67,16 +194,12 @@ class SpeechService {
         throw new Error('No audio in response');
       }
 
+      if (this.isCancelled) return;
       await this.playAudioFromBase64(data.audioBase64, data.mimeType || 'audio/mp3');
     } catch (err) {
       console.warn('Backend TTS failed, falling back to Web Speech API:', err);
-      // Fallback to browser speech synthesis
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = lang;
-        window.speechSynthesis.speak(u);
-      }
+      if (this.isCancelled) return;
+      await this.speakUtterance(text, lang);
     }
   }
 
@@ -92,14 +215,27 @@ class SpeechService {
     await this.speakText(text, settings?.targetLang || 'ar-EG', voice);
   }
 
-  // Play full sequence (e.g. 2x Source Word + Pause + 1x Target Translation)
-  public async playFullSequence(
+  private getSequenceCacheKey(item: VocabularyItem, settings: AudioSettings): string {
+    const sourceText = item.sourceText || item.english || '';
+    const targetText = item.targetText || item.arabic || '';
+    const sourceVoice = settings.sourceVoice || settings.enGeminiVoice || 'en-US-GuyNeural';
+    const targetVoice = settings.targetVoice || settings.arGeminiVoice || 'es-ES-ElviraNeural';
+    const sourceRepeats = settings.sourceRepeats ?? 2;
+    const targetRepeats = settings.targetRepeats ?? 1;
+    const pauseSourceMs = settings.pauseBetweenSource ?? settings.pauseBetweenEn ?? 600;
+    const pauseTargetMs = settings.pauseBetweenLanguages ?? settings.pauseBetweenEnAndAr ?? 800;
+    return `${sourceText}::${targetText}::${sourceVoice}::${targetVoice}::${sourceRepeats}::${targetRepeats}::${pauseSourceMs}::${pauseTargetMs}`;
+  }
+
+  private async fetchFullSequenceAudioBase64(
     item: VocabularyItem,
-    settings: AudioSettings,
-    onStageChange?: (stage: PlaybackStage) => void
-  ): Promise<boolean> {
-    this.isCancelled = false;
-    onStageChange?.('source_1');
+    settings: AudioSettings
+  ): Promise<string> {
+    const cacheKey = this.getSequenceCacheKey(item, settings);
+    const cached = this.sequenceCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     const sourceText = item.sourceText || item.english || '';
     const targetText = item.targetText || item.arabic || '';
@@ -110,46 +246,83 @@ class SpeechService {
     const pauseSourceMs = settings.pauseBetweenSource ?? settings.pauseBetweenEn ?? 600;
     const pauseTargetMs = settings.pauseBetweenLanguages ?? settings.pauseBetweenEnAndAr ?? 800;
 
+    const baseUrl = this.getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/tts/full-word`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sourceText,
+        targetText,
+        sourceVoice,
+        targetVoice,
+        sourceRepeats,
+        targetRepeats,
+        pauseSourceMs,
+        pauseTargetMs,
+        // Legacy aliases
+        english: sourceText,
+        arabic: targetText,
+        enVoice: sourceVoice,
+        arVoice: targetVoice,
+        pauseEnMs: pauseSourceMs,
+        pauseArMs: pauseTargetMs,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.audioBase64) {
+      throw new Error('No audio returned');
+    }
+
+    // Keep client cache bounded cleanly
+    if (this.sequenceCache.size > 80) {
+      const firstKey = this.sequenceCache.keys().next().value;
+      if (firstKey) this.sequenceCache.delete(firstKey);
+    }
+    this.sequenceCache.set(cacheKey, data.audioBase64);
+    return data.audioBase64;
+  }
+
+  public prefetchFullSequence(item: VocabularyItem | undefined, settings: AudioSettings): void {
+    if (!item) return;
+    const cacheKey = this.getSequenceCacheKey(item, settings);
+    if (this.sequenceCache.has(cacheKey)) return;
+    this.fetchFullSequenceAudioBase64(item, settings).catch(() => {
+      // Silent background prefetch
+    });
+  }
+
+  // Play full sequence (e.g. 2x Source Word + Pause + 1x Target Translation)
+  public async playFullSequence(
+    item: VocabularyItem,
+    settings: AudioSettings,
+    onStageChange?: (stage: PlaybackStage) => void
+  ): Promise<boolean> {
+    this.isCancelled = false;
+    onStageChange?.('source_1');
+
     try {
-      const baseUrl = this.getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/tts/full-word`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceText,
-          targetText,
-          sourceVoice,
-          targetVoice,
-          sourceRepeats,
-          targetRepeats,
-          pauseSourceMs,
-          pauseTargetMs,
-          // Legacy aliases
-          english: sourceText,
-          arabic: targetText,
-          enVoice: sourceVoice,
-          arVoice: targetVoice,
-          pauseEnMs: pauseSourceMs,
-          pauseArMs: pauseTargetMs,
-        }),
-      });
+      const audioBase64 = await this.fetchFullSequenceAudioBase64(item, settings);
 
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
+      if (this.isCancelled) {
+        onStageChange?.('idle');
+        return false;
       }
 
-      const data = await response.json();
-      if (!data.audioBase64) {
-        throw new Error('No audio returned');
-      }
-
-      if (this.isCancelled) return false;
-
-      await this.playAudioFromBase64(data.audioBase64, data.mimeType || 'audio/mp3');
+      onStageChange?.('source_2');
+      await this.playAudioFromBase64(audioBase64, 'audio/mp3');
       onStageChange?.('idle');
       return !this.isCancelled;
     } catch (err) {
       console.warn('Sequence playback via backend failed, using Web Speech fallback:', err);
+      if (this.isCancelled) {
+        onStageChange?.('idle');
+        return false;
+      }
       // Fallback using browser speech
       return this.playFallbackWebSpeechSequence(item, settings, onStageChange);
     }
@@ -171,15 +344,18 @@ class SpeechService {
       if (this.isCancelled) return false;
       onStageChange?.(i === 0 ? 'source_1' : 'source_2');
       await this.speakUtterance(sourceText, settings.sourceLang || 'en-US');
+      if (this.isCancelled) return false;
       await sleep(settings.pauseBetweenSource || 500);
     }
 
     if (targetText && targetRepeats > 0) {
+      if (this.isCancelled) return false;
       await sleep(settings.pauseBetweenLanguages || 600);
       for (let j = 0; j < targetRepeats; j++) {
         if (this.isCancelled) return false;
         onStageChange?.('target_1');
         await this.speakUtterance(targetText, settings.targetLang || 'es-ES');
+        if (this.isCancelled) return false;
         if (j < targetRepeats - 1) {
           await sleep(500);
         }
@@ -192,26 +368,64 @@ class SpeechService {
 
   private speakUtterance(text: string, lang: string): Promise<void> {
     return new Promise((resolve) => {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang;
-      u.rate = 0.95;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
-      window.speechSynthesis.speak(u);
+      if (!('speechSynthesis' in window) || !text.trim() || this.isCancelled) {
+        resolve();
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // ignore
+      }
+
+      // Small delay prevents Chrome/Safari from cancelling the new utterance right after .cancel()
+      window.setTimeout(() => {
+        if (this.isCancelled) {
+          resolve();
+          return;
+        }
+
+        const u = new SpeechSynthesisUtterance(text);
+        this.activeUtterance = u;
+        u.lang = lang;
+        u.rate = 0.95;
+
+        let settled = false;
+        const safetyMs = Math.max(4000, Math.min(18000, text.length * 180 + 2500));
+        const timerId = window.setTimeout(() => done(), safetyMs);
+
+        const done = () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timerId);
+          this.activeUtterance = null;
+          resolve();
+        };
+
+        u.onend = done;
+        u.onerror = done;
+
+        try {
+          window.speechSynthesis.speak(u);
+        } catch {
+          done();
+        }
+      }, 60);
     });
   }
 
   // Stop playback immediately
   public stop(): void {
     this.isCancelled = true;
-    if (this.currentAudioElement) {
-      this.currentAudioElement.pause();
-      this.currentAudioElement.currentTime = 0;
-      this.currentAudioElement = null;
-    }
+    this.clearActiveAudioHandlers(true);
+    this.activeUtterance = null;
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // ignore
+      }
     }
   }
 

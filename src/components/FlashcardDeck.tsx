@@ -143,6 +143,7 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
   // Auto-Study Deck Mode: Cycles card by card, speaking 2x source + 1x target
   const handleToggleAutoStudy = async () => {
     if (isAutoStudying) {
+      isAutoStudyingRef.current = false;
       setIsAutoStudying(false);
       speechService.stop();
       setIsPlayingSeq(false);
@@ -150,12 +151,15 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
       return;
     }
 
+    speechService.unlockAudio();
+    isAutoStudyingRef.current = true;
     setIsAutoStudying(true);
     runAutoStudyLoop(cardIndex);
   };
 
   const runAutoStudyLoop = async (index: number) => {
     if (!isAutoStudyingRef.current || items.length === 0) {
+      isAutoStudyingRef.current = false;
       setIsAutoStudying(false);
       setIsPlayingSeq(false);
       return;

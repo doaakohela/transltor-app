@@ -144,13 +144,13 @@ export default function App() {
     return [];
   });
 
-  // Settings state
+  // Settings state (always enforce autoAdvance: true so "Start Listening to List" advances through all words)
   const [settings, setSettings] = useState<AudioSettings>(() => {
     try {
       const saved = localStorage.getItem('vocabflow_audio_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        return { ...DEFAULT_SETTINGS, ...parsed, autoAdvance: true };
       }
     } catch (e) {
       console.warn('Could not read saved settings:', e);
@@ -207,6 +207,26 @@ export default function App() {
 
   const itemsRef = useRef(items);
   itemsRef.current = items;
+
+  const playbackSessionRef = useRef(0);
+
+  // Keep currentIndex within bounds whenever the vocabulary list changes
+  useEffect(() => {
+    if (items.length === 0) {
+      if (currentIndex !== 0) setCurrentIndex(0);
+    } else if (currentIndex >= items.length) {
+      setCurrentIndex(0);
+    }
+  }, [items.length, currentIndex]);
+
+  // Stop active playback cleanly on unmount
+  useEffect(() => {
+    return () => {
+      playbackSessionRef.current += 1;
+      isPlayingRef.current = false;
+      speechService.stop();
+    };
+  }, []);
 
   // Persist items
   useEffect(() => {
@@ -325,55 +345,85 @@ export default function App() {
     );
   };
 
-  // Sequential playback loop
-  const runPlaybackSequence = async (index: number) => {
-    const list = itemsRef.current;
-    if (list.length === 0 || index >= list.length) {
-      setIsPlaying(false);
-      setPlaybackStage('idle');
-      return;
-    }
+  // Sequential full-list playback loop (Desktop, Tablet & Mobile)
+  const startListPlayback = async (startIndex: number) => {
+    const sessionId = ++playbackSessionRef.current;
+    isPlayingRef.current = true;
+    setIsPlaying(true);
 
-    const item = list[index];
-    const currentSettings = settingsRef.current;
+    let idx = Math.max(0, startIndex);
 
-    const completed = await speechService.playFullSequence(
-      item,
-      currentSettings,
-      (stage) => {
-        setPlaybackStage(stage);
-      }
-    );
+    while (playbackSessionRef.current === sessionId && isPlayingRef.current) {
+      const list = itemsRef.current;
+      if (list.length === 0) break;
 
-    if (!completed || !isPlayingRef.current) {
-      setPlaybackStage('idle');
-      return;
-    }
-
-    // Advance to next word if autoAdvance is enabled
-    if (currentSettings.autoAdvance) {
-      if (index + 1 < list.length) {
-        setPlaybackStage('pause_next');
-        await sleep(currentSettings.pauseBetweenWords || 1400);
-
-        if (!isPlayingRef.current) {
-          setPlaybackStage('idle');
-          return;
+      if (idx >= list.length) {
+        if (settingsRef.current.loopPlaylist) {
+          idx = 0;
+        } else {
+          break;
         }
+      }
 
-        setCurrentIndex(index + 1);
-        runPlaybackSequence(index + 1);
-      } else if (currentSettings.loopPlaylist && list.length > 0) {
+      const item = list[idx];
+      const currentSettings = settingsRef.current;
+      setCurrentIndex(idx);
+
+      // Background prefetch of next item so transitions between words are seamless on Mobile/Tablet/Desktop
+      if (idx + 1 < list.length) {
+        window.setTimeout(() => {
+          if (playbackSessionRef.current === sessionId && isPlayingRef.current) {
+            speechService.prefetchFullSequence(itemsRef.current[idx + 1], settingsRef.current);
+          }
+        }, 150);
+      }
+
+      const completed = await speechService.playFullSequence(
+        item,
+        currentSettings,
+        (stage) => {
+          if (playbackSessionRef.current === sessionId && isPlayingRef.current) {
+            setPlaybackStage(stage);
+          }
+        }
+      );
+
+      if (playbackSessionRef.current !== sessionId || !isPlayingRef.current) {
+        break;
+      }
+
+      if (!completed) {
+        // Wait a tiny beat and continue to next item rather than silently stranding the list
+        await sleep(250);
+        if (playbackSessionRef.current !== sessionId || !isPlayingRef.current) {
+          break;
+        }
+      }
+
+      const latestList = itemsRef.current;
+      if (idx + 1 < latestList.length) {
         setPlaybackStage('pause_next');
         await sleep(currentSettings.pauseBetweenWords || 1400);
-        if (!isPlayingRef.current) return;
-        setCurrentIndex(0);
-        runPlaybackSequence(0);
+
+        if (playbackSessionRef.current !== sessionId || !isPlayingRef.current) {
+          break;
+        }
+        idx += 1;
+      } else if (currentSettings.loopPlaylist && latestList.length > 0) {
+        setPlaybackStage('pause_next');
+        await sleep(currentSettings.pauseBetweenWords || 1400);
+
+        if (playbackSessionRef.current !== sessionId || !isPlayingRef.current) {
+          break;
+        }
+        idx = 0;
       } else {
-        setIsPlaying(false);
-        setPlaybackStage('idle');
+        break;
       }
-    } else {
+    }
+
+    if (playbackSessionRef.current === sessionId) {
+      isPlayingRef.current = false;
       setIsPlaying(false);
       setPlaybackStage('idle');
     }
@@ -381,19 +431,34 @@ export default function App() {
 
   const handleTogglePlay = () => {
     if (isPlaying) {
+      playbackSessionRef.current += 1;
+      isPlayingRef.current = false;
       speechService.stop();
       setIsPlaying(false);
       setPlaybackStage('idle');
     } else {
-      if (items.length === 0) return;
-      setIsPlaying(true);
-      const startIndex = currentIndex >= items.length ? 0 : currentIndex;
+      const list = itemsRef.current;
+      if (list.length === 0) return;
+
+      // Unlock browser HTMLAudioElement synchronously inside the click/tap gesture (critical for iOS/Android/Safari)
+      speechService.unlockAudio();
+
+      // If at or past the last word in a multi-word list, start cleanly from the first word (index 0)
+      const startIndex =
+        currentIndex < 0 ||
+        currentIndex >= list.length ||
+        (list.length > 1 && currentIndex >= list.length - 1)
+          ? 0
+          : currentIndex;
+
       setCurrentIndex(startIndex);
-      runPlaybackSequence(startIndex);
+      startListPlayback(startIndex);
     }
   };
 
   const handleNext = () => {
+    playbackSessionRef.current += 1;
+    isPlayingRef.current = false;
     speechService.stop();
     setIsPlaying(false);
     setPlaybackStage('idle');
@@ -403,6 +468,8 @@ export default function App() {
   };
 
   const handlePrev = () => {
+    playbackSessionRef.current += 1;
+    isPlayingRef.current = false;
     speechService.stop();
     setIsPlaying(false);
     setPlaybackStage('idle');
@@ -412,6 +479,8 @@ export default function App() {
   };
 
   const handleSelectIndex = (index: number) => {
+    playbackSessionRef.current += 1;
+    isPlayingRef.current = false;
     speechService.stop();
     setIsPlaying(false);
     setPlaybackStage('idle');
@@ -419,8 +488,12 @@ export default function App() {
   };
 
   const handlePlayItem = async (item: VocabularyItem) => {
+    playbackSessionRef.current += 1;
+    isPlayingRef.current = false;
     speechService.stop();
+    speechService.unlockAudio();
     setIsPlaying(false);
+    setPlaybackStage('idle');
     const idx = items.findIndex((i) => i.id === item.id);
     if (idx !== -1) setCurrentIndex(idx);
     await speechService.playFullSequence(item, settingsRef.current);
