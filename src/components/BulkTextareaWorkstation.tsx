@@ -18,6 +18,7 @@ interface BulkTextareaWorkstationProps {
   onSetItems: (items: VocabularyItem[]) => void;
   sourceLangName: string;
   targetLangName: string;
+  theme?: 'dark' | 'light';
 }
 
 const DEMO_SAMPLE_WORDS = `plugging in\tconnecting
@@ -41,7 +42,9 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
   onSetItems,
   sourceLangName,
   targetLangName,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   // Local raw text state for smooth typing and bulk pasting
   const [rawText, setRawText] = useState(() => {
     return items
@@ -178,18 +181,32 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
   const totalParts = Math.max(1, Math.ceil(items.length / 100));
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-md text-left space-y-4">
-      {/* Top Header & Action Buttons (Screenshot 1) */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b border-slate-800">
+    <div
+      className={`border rounded-3xl p-5 sm:p-7 shadow-2xl backdrop-blur-md text-left space-y-4 ${
+        isLight
+          ? 'bg-white border-slate-200'
+          : 'bg-slate-900/90 border-slate-800'
+      }`}
+    >
+      {/* Top Header & Action Buttons */}
+      <div
+        className={`flex flex-col md:flex-row md:items-center justify-between gap-4 pb-3 border-b ${
+          isLight ? 'border-slate-200' : 'border-slate-800'
+        }`}
+      >
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="w-3 h-3 rounded-full bg-amber-400 shadow-md shadow-amber-400/30"></span>
-            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+            <span
+              className={`w-3 h-3 rounded-full shadow-md ${
+                isLight ? 'bg-[#1a73e8] shadow-blue-500/30' : 'bg-amber-400 shadow-amber-400/30'
+              }`}
+            ></span>
+            <h3 className={`text-base sm:text-lg font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
               Bulk Word &amp; Text Input (Up to 10,000 Words)
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
-            <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+          <p className={`text-xs mt-1 flex items-center gap-1.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            <HelpCircle className={`w-3.5 h-3.5 ${isLight ? 'text-[#1a73e8]' : 'text-slate-500'}`} />
             <span>
               Smart auto-detection: separates source &amp; translation with Tab, comma, double-space, dash, or space.
             </span>
@@ -207,11 +224,11 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
             className="hidden"
           />
 
-          {/* Upload Button */}
+          {/* Upload Button (Kept Amber as Import Action) */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+            className="keep-amber-btn px-3 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
             title="Import TXT, CSV, TSV, or JSON file containing up to 10,000 words"
           >
             <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -222,10 +239,14 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
           <button
             type="button"
             onClick={handleLoadSample}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+            className={`px-3 py-2 border rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+            }`}
             title="Fill with high-frequency sample vocabulary"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-amber-400'}`} />
             <span>Demo Sample List</span>
           </button>
 
@@ -234,17 +255,21 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
             <button
               type="button"
               onClick={handleCopyAll}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+              className={`px-3 py-2 border rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+              }`}
               title="Copy current list to clipboard"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <Check className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-emerald-500'}`} />
                   <span>Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
+                  <Copy className={`w-3.5 h-3.5 ${isLight ? 'text-white' : ''}`} />
                   <span>Copy</span>
                 </>
               )}
@@ -256,7 +281,11 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
             <button
               type="button"
               onClick={handleClearAll}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+              className={`p-2 rounded-xl transition-all cursor-pointer border ${
+                isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                  : 'text-slate-400 hover:text-red-400 hover:bg-slate-800 border-transparent'
+              }`}
               title="Clear entire vocabulary input"
             >
               <Trash2 className="w-4 h-4" />
@@ -265,42 +294,61 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
         </div>
       </div>
 
-      {/* Large Monospace Textarea (Screenshot 1) */}
+      {/* Large Monospace Textarea */}
       <div className="relative">
         <textarea
           value={rawText}
           onChange={(e) => handleTextChange(e.target.value)}
           placeholder={`Paste your words here (one word per line, up to 10,000 words):\nplugging in\tconnecting\nby far\tby a large margin\nvast\thuge\naesthetically\taesthetically pleasing\nwidens\tbroadens\nconceived\timagined\nthrill\texcitement`}
           rows={9}
-          className="w-full bg-slate-950 border border-slate-800 focus:border-amber-400/80 rounded-2xl p-4 text-sm font-mono text-slate-100 placeholder-slate-600 outline-none transition-all leading-relaxed custom-scrollbar shadow-inner"
+          className={`w-full border rounded-2xl p-4 text-sm font-mono outline-none transition-all leading-relaxed custom-scrollbar shadow-inner ${
+            isLight
+              ? 'bg-slate-50 border-slate-300 focus:border-[#1a73e8] text-slate-900 placeholder:text-slate-400'
+              : 'bg-slate-950 border-slate-800 focus:border-amber-400/80 text-slate-100 placeholder-slate-600'
+          }`}
           spellCheck={false}
         />
 
         {/* Small floating hint inside textarea */}
-        <div className="absolute right-3.5 bottom-3.5 pointer-events-none text-[11px] text-slate-500 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800">
-          Format: <code className="text-amber-400 font-mono">word [tab/comma/space] translation</code>
+        <div
+          className={`absolute right-3.5 bottom-3.5 pointer-events-none text-[11px] px-2 py-0.5 rounded-md border ${
+            isLight
+              ? 'text-slate-600 bg-white/95 border-slate-200'
+              : 'text-slate-500 bg-slate-900/80 border-slate-800'
+          }`}
+        >
+          Format:{' '}
+          <code className={`font-mono ${isLight ? 'text-[#1967d2] font-semibold' : 'text-amber-400'}`}>
+            word [tab/comma/space] translation
+          </code>
         </div>
       </div>
 
-      {/* Summary Status Bar (Screenshot 1) */}
-      <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+      {/* Summary Status Bar */}
+      <div
+        className={`border rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs ${
+          isLight
+            ? 'bg-slate-50 border-slate-200'
+            : 'bg-slate-950/80 border-slate-800/80'
+        }`}
+      >
         {/* Left: Total Recognized Words */}
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="text-slate-300">
+          <CheckCircle2 className={`w-4 h-4 shrink-0 ${isLight ? 'text-[#1a73e8]' : 'text-emerald-400'}`} />
+          <span className={isLight ? 'text-slate-700' : 'text-slate-300'}>
             Total Recognized Words:{' '}
-            <strong className="text-white font-mono text-sm ml-1">
+            <strong className={`font-mono text-sm ml-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {items.length} words
             </strong>
           </span>
         </div>
 
         {/* Right: Auto-partitioned MP3 parts info */}
-        <div className="text-slate-400 text-right text-[11px] font-medium flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        <div className={`text-right text-[11px] font-medium flex items-center gap-1.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${isLight ? 'bg-[#1a73e8]' : 'bg-amber-400'}`}></span>
           <span>
             Auto-partitioned for fast MP3 download into{' '}
-            <strong className="text-amber-300 font-mono">({totalParts})</strong>{' '}
+            <strong className={`font-mono ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>({totalParts})</strong>{' '}
             parts (100 words per file)
           </span>
         </div>

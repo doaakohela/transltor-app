@@ -480,7 +480,11 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentView('player')}
-                  className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/25 flex items-center gap-2 cursor-pointer whitespace-nowrap"
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer whitespace-nowrap border ${
+                    theme === 'light'
+                      ? 'bg-[#174ea6] hover:bg-[#1557b0] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-md shadow-blue-500/25'
+                      : 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-transparent shadow-md shadow-indigo-600/25'
+                  }`}
                 >
                   <Volume2 className="w-4 h-4" />
                   <span>Studio Workstation</span>
@@ -488,18 +492,18 @@ export default function App() {
 
                 <button
                   onClick={() => setCurrentView('flashcards')}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap border ${
                     theme === 'light'
-                      ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent'
                   }`}
                 >
-                  <Layers className="w-4 h-4" />
+                  <Layers className={`w-4 h-4 ${theme === 'light' ? 'text-white' : ''}`} />
                   <span>Flashcards Deck (1 Word Focus)</span>
                   <span
                     className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
                       theme === 'light'
-                        ? 'bg-amber-100 text-amber-950 font-bold border border-amber-200'
+                        ? 'bg-[#174ea6] text-white font-bold border border-white/25'
                         : 'bg-slate-950/60 text-amber-300'
                     }`}
                   >
@@ -509,13 +513,13 @@ export default function App() {
 
                 <button
                   onClick={() => setCurrentView('studio')}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap border ${
                     theme === 'light'
-                      ? 'text-slate-700 hover:text-slate-950 hover:bg-slate-100'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent'
                   }`}
                 >
-                  <Sliders className={`w-4 h-4 ${theme === 'light' ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <Sliders className={`w-4 h-4 ${theme === 'light' ? 'text-white' : 'text-amber-400'}`} />
                   <span>Voice Settings</span>
                 </button>
               </div>
@@ -526,29 +530,25 @@ export default function App() {
                   type="button"
                   onClick={handleToggleRepetitionPattern}
                   className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm hover:scale-105 active:scale-95 whitespace-nowrap ${
-                    is2x1x
-                      ? theme === 'light'
-                        ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-950 border-indigo-200'
-                        : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border-indigo-700/80'
-                      : theme === 'light'
-                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-200'
+                    theme === 'light'
+                      ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                      : is2x1x
+                      ? 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border-indigo-700/80'
                       : 'bg-amber-950/80 hover:bg-amber-900 text-amber-300 border-amber-600/80'
                   }`}
                   title="Click to switch audio repetition mode: (2x Source + 1x Target) ⇄ (1x Source + 2x Target)"
                 >
                   <Repeat
                     className={`w-3.5 h-3.5 ${
-                      is2x1x
-                        ? theme === 'light'
-                          ? 'text-indigo-700'
-                          : 'text-indigo-400'
-                        : theme === 'light'
-                        ? 'text-amber-700'
+                      theme === 'light'
+                        ? 'text-white'
+                        : is2x1x
+                        ? 'text-indigo-400'
                         : 'text-amber-400 animate-pulse'
                     }`}
                   />
                   <span>{is2x1x ? '2x Source + 1x Target' : '1x Source + 2x Target'}</span>
-                  <span className="text-[10px] opacity-70">⇄</span>
+                  <span className="text-[10px] opacity-85">⇄</span>
                 </button>
               </div>
             </div>
@@ -559,6 +559,7 @@ export default function App() {
               onSetItems={setItems}
               sourceLangName={sourceLang.name}
               targetLangName={targetLang.name}
+              theme={theme}
             />
 
             {/* Mid-Content In-Feed Google AdSense Slot (Between Workstation and Player) */}
@@ -588,6 +589,7 @@ export default function App() {
               onToggleMastered={handleToggleMastered}
               onUpdateItem={handleUpdateItem}
               onPlayItem={handlePlayItem}
+              theme={theme}
             />
 
             {/* Semantic SEO & FAQ Guide for Search Engine Ranking */}
@@ -601,6 +603,7 @@ export default function App() {
             items={items}
             settings={settings}
             onToggleMastered={handleToggleMastered}
+            theme={theme}
           />
         )}
 
@@ -609,6 +612,7 @@ export default function App() {
           <VoiceStudio
             settings={settings}
             onUpdateSettings={handleUpdateSettings}
+            theme={theme}
           />
         )}
 

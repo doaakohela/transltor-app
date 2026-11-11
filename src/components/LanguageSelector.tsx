@@ -111,13 +111,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       {/* MOBILE-ONLY HORIZONTAL LAYOUT (< 768px): 2 language buttons side-by-side */}
       <div className="block md:hidden relative space-y-2.5">
         <div className="flex items-center justify-between text-[11px] font-semibold px-0.5">
-          <span className={`flex items-center gap-1 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`}>
-            <Globe className="w-3 h-3 shrink-0" />
+          <span className={`flex items-center gap-1 ${isLight ? 'text-[#1967d2]' : 'text-indigo-400'}`}>
+            <Globe className={`w-3 h-3 shrink-0 ${isLight ? 'text-[#1a73e8]' : ''}`} />
             <span>Source ({settings.sourceRepeats || 2}x)</span>
           </span>
-          <span className={`flex items-center gap-1 ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
+          <span className={`flex items-center gap-1 ${isLight ? 'text-[#1967d2]' : 'text-amber-400'}`}>
             <span>Target ({settings.targetRepeats || 1}x)</span>
-            <Globe className="w-3 h-3 shrink-0" />
+            <Globe className={`w-3 h-3 shrink-0 ${isLight ? 'text-[#1a73e8]' : ''}`} />
           </span>
         </div>
 
@@ -131,7 +131,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }}
             className={`flex-1 min-w-0 min-h-[44px] rounded-xl px-2.5 py-2 flex items-center justify-between gap-1.5 transition-all cursor-pointer border ${
               isLight
-                ? 'bg-slate-50 border-slate-300 text-slate-900 shadow-xs'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] border-[#1a73e8] text-white shadow-xs'
                 : 'bg-slate-950 border-slate-700/80 text-white'
             }`}
           >
@@ -139,7 +139,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               <span className="text-lg shrink-0">{currentSourceLang.flag}</span>
               <span className="text-xs font-bold truncate">{currentSourceLang.name}</span>
             </span>
-            <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
+            <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-white' : 'text-slate-400'}`} />
           </button>
 
           {/* Mobile Swap Button */}
@@ -149,11 +149,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             title="Swap source and target languages"
             className={`min-w-[38px] min-h-[44px] px-2 rounded-xl border transition-all active:scale-95 flex items-center justify-center shrink-0 cursor-pointer ${
               isLight
-                ? 'bg-slate-100 text-slate-800 border-slate-300'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
                 : 'bg-slate-800/90 text-slate-300 border-slate-700'
             }`}
           >
-            <ArrowLeftRight className="w-4 h-4 text-amber-500" />
+            <ArrowLeftRight className={`w-4 h-4 ${isLight ? 'text-white' : 'text-amber-500'}`} />
           </button>
 
           {/* Mobile Target Language Button */}
@@ -165,7 +165,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }}
             className={`flex-1 min-w-0 min-h-[44px] rounded-xl px-2.5 py-2 flex items-center justify-between gap-1.5 transition-all cursor-pointer border ${
               isLight
-                ? 'bg-slate-50 border-slate-300 text-slate-900 shadow-xs'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] border-[#1a73e8] text-white shadow-xs'
                 : 'bg-slate-950 border-slate-700/80 text-white'
             }`}
           >
@@ -173,7 +173,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               <span className="text-lg shrink-0">{currentTargetLang.flag}</span>
               <span className="text-xs font-bold truncate">{currentTargetLang.name}</span>
             </span>
-            <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
+            <ChevronDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-white' : 'text-slate-400'}`} />
           </button>
         </div>
 
@@ -185,7 +185,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }`}
           >
             <div className="relative mb-2">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+              <Search className={`w-3.5 h-3.5 absolute left-3 top-2.5 ${isLight ? 'text-[#1a73e8]' : 'text-slate-500'}`} />
               <input
                 type="text"
                 value={isSourceOpen ? searchSource : searchTarget}
@@ -195,7 +195,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 placeholder={`Search ${isSourceOpen ? 'source' : 'target'} language...`}
                 className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs outline-none ${
                   isLight
-                    ? 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-500'
+                    ? 'bg-slate-50 border border-slate-300 focus:border-[#1a73e8] text-slate-900 placeholder:text-slate-500'
                     : 'bg-slate-950 border border-slate-800 text-white placeholder-slate-500'
                 }`}
               />
@@ -215,10 +215,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                     className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer border ${
                       isSelected
                         ? isLight
-                          ? 'bg-indigo-100 text-indigo-950 border-indigo-300 font-bold'
+                          ? 'bg-[#1a73e8] text-white border-[#1557b0] font-bold'
                           : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30 font-semibold'
                         : isLight
-                        ? 'hover:bg-slate-100 text-slate-800 border-transparent'
+                        ? 'hover:bg-[#1a73e8] hover:text-white text-slate-800 border-transparent group'
                         : 'hover:bg-slate-800/80 text-slate-300 border-transparent'
                     }`}
                   >
@@ -226,12 +226,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                       <span className="text-lg shrink-0">{lang.flag}</span>
                       <div className="min-w-0">
                         <div className="text-xs font-semibold truncate">{lang.name}</div>
-                        <div className={`text-[10px] truncate ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                        <div className={`text-[10px] truncate ${isLight ? (isSelected ? 'text-blue-100' : 'text-slate-600 group-hover:text-blue-100') : 'text-slate-400'}`}>
                           {lang.nativeName}
                         </div>
                       </div>
                     </div>
-                    {isSelected && <Check className="w-4 h-4 shrink-0 text-amber-400" />}
+                    {isSelected && <Check className={`w-4 h-4 shrink-0 ${isLight ? 'text-white' : 'text-amber-400'}`} />}
                   </button>
                 );
               })}
@@ -246,16 +246,16 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         <div className="flex-1 relative">
           <label
             className={`text-xs font-semibold mb-1.5 flex items-center justify-between ${
-              isLight ? 'text-slate-700' : 'text-slate-400'
+              isLight ? 'text-[#1967d2]' : 'text-slate-400'
             }`}
           >
             <span className="flex items-center gap-1.5">
-              <Globe className={`w-3.5 h-3.5 ${isLight ? 'text-indigo-600' : 'text-indigo-400'}`} />
+              <Globe className={`w-3.5 h-3.5 ${isLight ? 'text-[#1a73e8]' : 'text-indigo-400'}`} />
               <span>Source Language to Memorize (Repeats: {settings.sourceRepeats || 2}x)</span>
             </span>
             <span
               className={`text-[11px] font-semibold ${
-                isLight ? 'text-amber-700' : 'text-amber-400'
+                isLight ? 'text-[#1a73e8]' : 'text-amber-400'
               }`}
             >
               {currentSourceLang.voices.length} Natural Studio Voices
@@ -270,19 +270,19 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }}
             className={`w-full rounded-xl p-3 flex items-center justify-between transition-all cursor-pointer border ${
               isLight
-                ? 'bg-slate-50 border-slate-300 hover:border-indigo-500 text-slate-900 shadow-xs'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] border-[#1a73e8] text-white shadow-xs'
                 : 'bg-slate-950 border-slate-700/80 hover:border-indigo-500 text-white'
             }`}
           >
             <div className="flex items-center gap-2.5">
               <span className="text-2xl">{currentSourceLang.flag}</span>
               <div className="text-left">
-                <div className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <div className="text-sm font-bold text-white">
                   {currentSourceLang.name}
                 </div>
                 <div
                   className={`text-[11px] ${
-                    isLight ? 'text-slate-600 font-medium' : 'text-slate-400'
+                    isLight ? 'text-blue-100 font-medium' : 'text-slate-400'
                   }`}
                 >
                   {currentSourceLang.nativeName}
@@ -290,7 +290,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               </div>
             </div>
             <ChevronDown
-              className={`w-4 h-4 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}
+              className={`w-4 h-4 ${isLight ? 'text-white' : 'text-slate-400'}`}
             />
           </button>
 
@@ -306,7 +306,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               <div className="relative mb-2">
                 <Search
                   className={`w-3.5 h-3.5 absolute left-3 top-3 ${
-                    isLight ? 'text-slate-500' : 'text-slate-500'
+                    isLight ? 'text-[#1a73e8]' : 'text-slate-500'
                   }`}
                 />
                 <input
@@ -316,7 +316,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   placeholder="Search all 140+ world languages..."
                   className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs outline-none ${
                     isLight
-                      ? 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-indigo-500'
+                      ? 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-[#1a73e8]'
                       : 'bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:border-indigo-500'
                   }`}
                   autoFocus
@@ -328,13 +328,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   <button
                     key={lang.code}
                     onClick={() => handleSelectSource(lang.code)}
-                    className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer border ${
+                    className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer border group ${
                       lang.code === currentSourceLang.code
                         ? isLight
-                          ? 'bg-indigo-100 text-indigo-950 border-indigo-300 font-bold'
+                          ? 'bg-[#1a73e8] text-white border-[#1557b0] font-bold'
                           : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30 font-semibold'
                         : isLight
-                        ? 'hover:bg-slate-100 text-slate-800 border-transparent'
+                        ? 'hover:bg-[#1a73e8] hover:text-white text-slate-800 border-transparent'
                         : 'hover:bg-slate-800/80 text-slate-300 border-transparent'
                     }`}
                   >
@@ -344,7 +344,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                         <div className="text-xs font-semibold">{lang.name}</div>
                         <div
                           className={`text-[10px] ${
-                            isLight ? 'text-slate-600' : 'text-slate-400'
+                            isLight
+                              ? lang.code === currentSourceLang.code
+                                ? 'text-blue-100'
+                                : 'text-slate-600 group-hover:text-blue-100'
+                              : 'text-slate-400'
                           }`}
                         >
                           {lang.nativeName}
@@ -353,7 +357,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                     </div>
                     {lang.code === currentSourceLang.code && (
                       <Check
-                        className={`w-4 h-4 ${isLight ? 'text-indigo-700' : 'text-indigo-400'}`}
+                        className={`w-4 h-4 ${isLight ? 'text-white' : 'text-indigo-400'}`}
                       />
                     )}
                   </button>
@@ -371,11 +375,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             title="Swap source and target languages"
             className={`p-2.5 rounded-xl border transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-sm ${
               isLight
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
                 : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
             }`}
           >
-            <ArrowLeftRight className="w-4 h-4 text-amber-500" />
+            <ArrowLeftRight className={`w-4 h-4 ${isLight ? 'text-white' : 'text-amber-500'}`} />
           </button>
 
           <button
@@ -387,23 +391,19 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 : 'Current: 1x Word + 2x Translation. Click to switch to: 2x Word + 1x Translation'
             }
             className={`p-2.5 rounded-xl border transition-all flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 active:scale-95 ${
-              is2x1x
-                ? isLight
-                  ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950 border-indigo-300'
-                  : 'bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border-indigo-700/80'
-                : isLight
-                ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300'
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : is2x1x
+                ? 'bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border-indigo-700/80'
                 : 'bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border-amber-600/80'
             }`}
           >
             <Repeat
               className={`w-4 h-4 ${
-                is2x1x
-                  ? isLight
-                    ? 'text-indigo-700'
-                    : 'text-indigo-400'
-                  : isLight
-                  ? 'text-amber-700 animate-pulse'
+                isLight
+                  ? 'text-white'
+                  : is2x1x
+                  ? 'text-indigo-400'
                   : 'text-amber-400 animate-pulse'
               }`}
             />
@@ -414,16 +414,16 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         <div className="flex-1 relative">
           <label
             className={`text-xs font-semibold mb-1.5 flex items-center justify-between ${
-              isLight ? 'text-slate-700' : 'text-slate-400'
+              isLight ? 'text-[#1967d2]' : 'text-slate-400'
             }`}
           >
             <span className="flex items-center gap-1.5">
-              <Globe className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+              <Globe className={`w-3.5 h-3.5 ${isLight ? 'text-[#1a73e8]' : 'text-amber-400'}`} />
               <span>Target Language Translation (Repeats: {settings.targetRepeats || 1}x)</span>
             </span>
             <span
               className={`text-[11px] font-semibold ${
-                isLight ? 'text-amber-700' : 'text-amber-400'
+                isLight ? 'text-[#1a73e8]' : 'text-amber-400'
               }`}
             >
               {currentTargetLang.voices.length} Natural Studio Voices
@@ -438,19 +438,19 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }}
             className={`w-full rounded-xl p-3 flex items-center justify-between transition-all cursor-pointer border ${
               isLight
-                ? 'bg-slate-50 border-slate-300 hover:border-amber-500 text-slate-900 shadow-xs'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] border-[#1a73e8] text-white shadow-xs'
                 : 'bg-slate-950 border-slate-700/80 hover:border-amber-500 text-white'
             }`}
           >
             <div className="flex items-center gap-2.5">
               <span className="text-2xl">{currentTargetLang.flag}</span>
               <div className="text-left">
-                <div className={`text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <div className="text-sm font-bold text-white">
                   {currentTargetLang.name}
                 </div>
                 <div
                   className={`text-[11px] ${
-                    isLight ? 'text-slate-600 font-medium' : 'text-slate-400'
+                    isLight ? 'text-blue-100 font-medium' : 'text-slate-400'
                   }`}
                 >
                   {currentTargetLang.nativeName}
@@ -458,7 +458,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               </div>
             </div>
             <ChevronDown
-              className={`w-4 h-4 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}
+              className={`w-4 h-4 ${isLight ? 'text-white' : 'text-slate-400'}`}
             />
           </button>
 
@@ -474,7 +474,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               <div className="relative mb-2">
                 <Search
                   className={`w-3.5 h-3.5 absolute left-3 top-3 ${
-                    isLight ? 'text-slate-500' : 'text-slate-500'
+                    isLight ? 'text-[#1a73e8]' : 'text-slate-500'
                   }`}
                 />
                 <input
@@ -484,7 +484,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   placeholder="Search target languages..."
                   className={`w-full rounded-xl pl-9 pr-3 py-2 text-xs outline-none ${
                     isLight
-                      ? 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-amber-500'
+                      ? 'bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-[#1a73e8]'
                       : 'bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:border-amber-500'
                   }`}
                   autoFocus
@@ -496,13 +496,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   <button
                     key={lang.code}
                     onClick={() => handleSelectTarget(lang.code)}
-                    className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer border ${
+                    className={`w-full p-2.5 rounded-xl flex items-center justify-between text-left transition-colors cursor-pointer border group ${
                       lang.code === currentTargetLang.code
                         ? isLight
-                          ? 'bg-amber-100 text-amber-950 border-amber-300 font-bold'
+                          ? 'bg-[#1a73e8] text-white border-[#1557b0] font-bold'
                           : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold'
                         : isLight
-                        ? 'hover:bg-slate-100 text-slate-800 border-transparent'
+                        ? 'hover:bg-[#1a73e8] hover:text-white text-slate-800 border-transparent'
                         : 'hover:bg-slate-800/80 text-slate-300 border-transparent'
                     }`}
                   >
@@ -512,7 +512,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                         <div className="text-xs font-semibold">{lang.name}</div>
                         <div
                           className={`text-[10px] ${
-                            isLight ? 'text-slate-600' : 'text-slate-400'
+                            isLight
+                              ? lang.code === currentTargetLang.code
+                                ? 'text-blue-100'
+                                : 'text-slate-600 group-hover:text-blue-100'
+                              : 'text-slate-400'
                           }`}
                         >
                           {lang.nativeName}
@@ -521,7 +525,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                     </div>
                     {lang.code === currentTargetLang.code && (
                       <Check
-                        className={`w-4 h-4 ${isLight ? 'text-amber-700' : 'text-amber-400'}`}
+                        className={`w-4 h-4 ${isLight ? 'text-white' : 'text-amber-400'}`}
                       />
                     )}
                   </button>
@@ -541,7 +545,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         <div className="grid grid-cols-2 gap-2">
           {/* Mobile Source Voice */}
           <div className="min-w-0 space-y-1">
-            <span className={`text-[11px] font-semibold block truncate ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+            <span className={`text-[11px] font-semibold block truncate ${isLight ? 'text-[#1967d2]' : 'text-slate-400'}`}>
               {currentSourceLang.flag} Source Voice
             </span>
             <div className="flex items-center gap-1 min-w-0">
@@ -555,7 +559,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 }
                 className={`flex-1 min-w-0 truncate rounded-lg px-2 py-1.5 text-xs font-medium outline-none border ${
                   isLight
-                    ? 'bg-slate-50 border-slate-300 text-indigo-950'
+                    ? 'bg-slate-50 border-[#aecbfa] text-[#1967d2]'
                     : 'bg-slate-950 border-slate-700 text-indigo-300'
                 }`}
               >
@@ -579,10 +583,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   );
                 }}
                 disabled={previewingVoice !== null}
-                className={`p-1.5 rounded-lg shrink-0 transition-colors cursor-pointer ${
+                className={`p-1.5 rounded-lg shrink-0 transition-colors cursor-pointer border ${
                   isLight
-                    ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-900'
-                    : 'bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300'
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                    : 'bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border-transparent'
                 }`}
                 title="Listen to sample audio"
               >
@@ -593,7 +597,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
           {/* Mobile Target Voice */}
           <div className="min-w-0 space-y-1">
-            <span className={`text-[11px] font-semibold block truncate ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+            <span className={`text-[11px] font-semibold block truncate ${isLight ? 'text-[#1967d2]' : 'text-slate-400'}`}>
               {currentTargetLang.flag} Target Voice
             </span>
             <div className="flex items-center gap-1 min-w-0">
@@ -607,7 +611,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 }
                 className={`flex-1 min-w-0 truncate rounded-lg px-2 py-1.5 text-xs font-medium outline-none border ${
                   isLight
-                    ? 'bg-slate-50 border-slate-300 text-amber-950'
+                    ? 'bg-slate-50 border-[#aecbfa] text-slate-900'
                     : 'bg-slate-950 border-slate-700 text-amber-300'
                 }`}
               >
@@ -631,10 +635,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                   );
                 }}
                 disabled={previewingVoice !== null}
-                className={`p-1.5 rounded-lg shrink-0 transition-colors cursor-pointer ${
+                className={`p-1.5 rounded-lg shrink-0 transition-colors cursor-pointer border ${
                   isLight
-                    ? 'bg-amber-100 hover:bg-amber-200 text-amber-900'
-                    : 'bg-amber-500/20 hover:bg-amber-500/40 text-amber-300'
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                    : 'bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border-transparent'
                 }`}
                 title="Listen to sample audio"
               >
@@ -648,22 +652,20 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           type="button"
           onClick={handleToggleRepetitionPattern}
           className={`w-full px-3 py-2 rounded-xl border text-xs font-bold transition-all flex items-center justify-between gap-2 cursor-pointer shadow-xs ${
-            is2x1x
-              ? isLight
-                ? 'bg-indigo-100 text-indigo-950 border-indigo-300'
-                : 'bg-indigo-950/70 text-indigo-300 border-indigo-700/80'
-              : isLight
-              ? 'bg-amber-100 text-amber-950 border-amber-300'
+            isLight
+              ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+              : is2x1x
+              ? 'bg-indigo-950/70 text-indigo-300 border-indigo-700/80'
               : 'bg-amber-950/70 text-amber-300 border-amber-600/80'
           }`}
         >
           <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <Repeat className={`w-3.5 h-3.5 shrink-0 ${is2x1x ? 'text-indigo-400' : 'text-amber-400'}`} />
+            <Repeat className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-white' : is2x1x ? 'text-indigo-400' : 'text-amber-400'}`} />
             <span>{is2x1x ? 'Loop: 2x Word + 1x Trans' : 'Loop: 1x Word + 2x Trans'}</span>
           </span>
           <span
             className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
-              isLight ? 'bg-white text-slate-700 border border-slate-200' : 'bg-slate-900/80 text-slate-400'
+              isLight ? 'bg-[#174ea6] text-white border border-white/25' : 'bg-slate-900/80 text-slate-400'
             }`}
           >
             Switch ⇄
@@ -679,7 +681,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       >
         {/* Source Voice Info */}
         <div className="flex items-center gap-2">
-          <span className={isLight ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+          <span className={isLight ? 'text-[#1967d2] font-semibold' : 'text-slate-400'}>
             {currentSourceLang.name} Voice:
           </span>
           <select
@@ -692,7 +694,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }
             className={`rounded-lg px-2.5 py-1 text-xs font-medium outline-none border ${
               isLight
-                ? 'bg-slate-50 border-slate-300 text-indigo-950'
+                ? 'bg-slate-50 border-[#aecbfa] text-slate-900'
                 : 'bg-slate-950 border-slate-700 text-indigo-300'
             }`}
           >
@@ -715,10 +717,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               );
             }}
             disabled={previewingVoice !== null}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
               isLight
-                ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-900'
-                : 'bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border-transparent'
             }`}
             title="Listen to sample audio"
           >
@@ -728,7 +730,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
         {/* Target Voice Info */}
         <div className="flex items-center gap-2">
-          <span className={isLight ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+          <span className={isLight ? 'text-[#1967d2] font-semibold' : 'text-slate-400'}>
             {currentTargetLang.name} Voice:
           </span>
           <select
@@ -741,7 +743,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             }
             className={`rounded-lg px-2.5 py-1 text-xs font-medium outline-none border ${
               isLight
-                ? 'bg-slate-50 border-slate-300 text-amber-950'
+                ? 'bg-slate-50 border-[#aecbfa] text-slate-900'
                 : 'bg-slate-950 border-slate-700 text-amber-300'
             }`}
           >
@@ -764,10 +766,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               );
             }}
             disabled={previewingVoice !== null}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
               isLight
-                ? 'bg-amber-100 hover:bg-amber-200 text-amber-900'
-                : 'bg-amber-500/20 hover:bg-amber-500/40 text-amber-300'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border-transparent'
             }`}
             title="Listen to sample audio"
           >
@@ -781,24 +783,20 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             type="button"
             onClick={handleToggleRepetitionPattern}
             className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs hover:scale-[1.02] active:scale-95 ${
-              is2x1x
-                ? isLight
-                  ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-950 border-indigo-300'
-                  : 'bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border-indigo-700/80'
-                : isLight
-                ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300'
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : is2x1x
+                ? 'bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border-indigo-700/80'
                 : 'bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border-amber-600/80'
             }`}
             title="Click to toggle: (2x Source + 1x Target) ⇄ (1x Source + 2x Target)"
           >
             <Repeat
               className={`w-3.5 h-3.5 ${
-                is2x1x
-                  ? isLight
-                    ? 'text-indigo-700'
-                    : 'text-indigo-400'
-                  : isLight
-                  ? 'text-amber-700'
+                isLight
+                  ? 'text-white'
+                  : is2x1x
+                  ? 'text-indigo-400'
                   : 'text-amber-400'
               }`}
             />
@@ -807,7 +805,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             </span>
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                isLight ? 'bg-white text-slate-700 border border-slate-200' : 'bg-slate-900/80 text-slate-400'
+                isLight ? 'bg-[#174ea6] text-white border border-white/25' : 'bg-slate-900/80 text-slate-400'
               }`}
             >
               Switch ⇄
@@ -824,7 +822,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               onChange={(e) => onUpdateSettings({ sourceRepeats: Number(e.target.value) })}
               className={`rounded-md px-1.5 py-0.5 text-xs border ${
                 isLight
-                  ? 'bg-slate-50 border-slate-300 text-slate-900'
+                  ? 'bg-slate-50 border-[#aecbfa] text-[#1967d2]'
                   : 'bg-slate-950 border-slate-700 text-white'
               }`}
               title="Custom source repetitions"
@@ -839,7 +837,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               onChange={(e) => onUpdateSettings({ targetRepeats: Number(e.target.value) })}
               className={`rounded-md px-1.5 py-0.5 text-xs border ${
                 isLight
-                  ? 'bg-slate-50 border-slate-300 text-slate-900'
+                  ? 'bg-slate-50 border-[#aecbfa] text-[#1967d2]'
                   : 'bg-slate-950 border-slate-700 text-white'
               }`}
               title="Custom target repetitions"

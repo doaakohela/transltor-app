@@ -17,12 +17,15 @@ import { getLanguageByCode } from '../data/languages.ts';
 interface VoiceStudioProps {
   settings: AudioSettings;
   onUpdateSettings: (newSettings: Partial<AudioSettings>) => void;
+  theme?: 'dark' | 'light';
 }
 
 export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   settings,
   onUpdateSettings,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   const [testingSource, setTestingSource] = useState(false);
   const [testingTarget, setTestingTarget] = useState(false);
   const [testSampleDownloaded, setTestSampleDownloaded] = useState(false);
@@ -100,18 +103,28 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-8 text-left">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-amber-950/30 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div
+        className={`border rounded-3xl p-6 sm:p-8 shadow-xl ${
+          isLight
+            ? 'bg-white border-slate-200'
+            : 'bg-gradient-to-r from-slate-900 via-indigo-950/40 to-amber-950/30 border-slate-800'
+        }`}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="p-2 bg-amber-400/20 text-amber-300 rounded-xl">
+              <span
+                className={`p-2 rounded-xl ${
+                  isLight ? 'bg-[#1a73e8] text-white' : 'bg-amber-400/20 text-amber-300'
+                }`}
+              >
                 <Sliders className="w-5 h-5" />
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
+              <h2 className={`text-xl sm:text-2xl font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 Voice Studio & Audio Prosody
               </h2>
             </div>
-            <p className="text-sm text-slate-300">
+            <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-300'}`}>
               Customize natural studio voices for any language, repetition counts, and exact silent pauses
             </p>
           </div>
@@ -119,14 +132,18 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
           <button
             onClick={handleTestDownload}
             disabled={isDownloadingSample}
-            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all cursor-pointer"
+            className={`keep-amber-btn px-4 py-2.5 border rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+              isLight
+                ? 'keep-amber-outline bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-400'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+            }`}
           >
             {isDownloadingSample ? (
-              <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+              <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
             ) : testSampleDownloaded ? (
-              <Check className="w-4 h-4 text-emerald-400" />
+              <Check className="w-4 h-4 text-emerald-500" />
             ) : (
-              <Download className="w-4 h-4 text-amber-400" />
+              <Download className={`w-4 h-4 ${isLight ? 'text-amber-700' : 'text-amber-400'}`} />
             )}
             <span>Download Test Sample MP3</span>
           </button>
@@ -136,15 +153,19 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
       {/* Grid: Source Voice & Target Voice */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Source Language Voice Settings */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div
+          className={`border rounded-3xl p-6 space-y-5 ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
+          }`}
+        >
+          <div className={`flex items-center justify-between border-b pb-3 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
             <div className="flex items-center gap-2">
               <span className="text-2xl">{currentSourceLang.flag}</span>
               <div>
-                <h3 className="font-bold text-white text-base">
+                <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {currentSourceLang.name} Voice
                 </h3>
-                <span className="text-[11px] text-indigo-400">
+                <span className={`text-[11px] font-medium ${isLight ? 'text-[#1967d2]' : 'text-indigo-400'}`}>
                   Repeats: {settings.sourceRepeats || 2}x in sequence
                 </span>
               </div>
@@ -153,7 +174,11 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
             <button
               onClick={handleTestSource}
               disabled={testingSource}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
+              className={`px-3 py-1.5 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] shadow-blue-500/20'
+                  : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/20'
+              }`}
             >
               {testingSource ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -179,7 +204,11 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
                   }
                   className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-indigo-600/20 border-indigo-500 shadow-md shadow-indigo-500/10'
+                      ? isLight
+                        ? 'bg-[#e8f0fe] border-[#1a73e8] shadow-xs'
+                        : 'bg-indigo-600/20 border-indigo-500 shadow-md shadow-indigo-500/10'
+                      : isLight
+                      ? 'bg-slate-50 border-slate-200 hover:border-[#aecbfa]'
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                   }`}
                 >
@@ -187,18 +216,30 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
                     <div className="flex items-center gap-2">
                       <Radio
                         className={`w-4 h-4 ${
-                          isSelected ? 'text-indigo-400' : 'text-slate-600'
+                          isSelected
+                            ? isLight
+                              ? 'text-[#1a73e8]'
+                              : 'text-indigo-400'
+                            : 'text-slate-400'
                         }`}
                       />
-                      <span className="text-xs font-bold text-white">{voice.name}</span>
+                      <span className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                        {voice.name}
+                      </span>
                     </div>
                     {voice.badge && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-medium">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          isLight
+                            ? 'bg-white text-[#1967d2] border border-[#aecbfa]'
+                            : 'bg-indigo-500/20 text-indigo-300'
+                        }`}
+                      >
                         {voice.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1 ml-6">
+                  <p className={`text-[11px] mt-1 ml-6 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                     {voice.description}
                   </p>
                 </div>
@@ -207,18 +248,28 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
           </div>
 
           {/* Repeat count slider for source */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
-            <span className="text-slate-300">Source word repetitions:</span>
+          <div
+            className={`border rounded-xl p-3 flex items-center justify-between text-xs ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/80 border-slate-800'
+            }`}
+          >
+            <span className={isLight ? 'text-slate-700 font-medium' : 'text-slate-300'}>
+              Source word repetitions:
+            </span>
             <div className="flex items-center gap-1.5">
               {[1, 2, 3].map((num) => (
                 <button
                   key={num}
                   type="button"
                   onClick={() => onUpdateSettings({ sourceRepeats: num })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                     (settings.sourceRepeats || 2) === num
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                      ? isLight
+                        ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8]'
+                        : 'bg-indigo-600 text-white border-transparent'
+                      : isLight
+                      ? 'bg-[#1a73e8] text-white hover:bg-[#1557b0] border-[#1a73e8]'
+                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800 border-transparent'
                   }`}
                 >
                   {num}x {num === 2 ? '(Ideal)' : ''}
@@ -229,15 +280,19 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
         </div>
 
         {/* Target Language Voice Settings */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div
+          className={`border rounded-3xl p-6 space-y-5 ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
+          }`}
+        >
+          <div className={`flex items-center justify-between border-b pb-3 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
             <div className="flex items-center gap-2">
               <span className="text-2xl">{currentTargetLang.flag}</span>
               <div>
-                <h3 className="font-bold text-white text-base">
+                <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {currentTargetLang.name} Voice
                 </h3>
-                <span className="text-[11px] text-amber-400">
+                <span className={`text-[11px] font-medium ${isLight ? 'text-[#1967d2]' : 'text-amber-400'}`}>
                   Repeats: {settings.targetRepeats || 1}x in sequence
                 </span>
               </div>
@@ -246,7 +301,11 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
             <button
               onClick={handleTestTarget}
               disabled={testingTarget}
-              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white shadow-blue-500/20'
+                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
+              }`}
             >
               {testingTarget ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -272,7 +331,11 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
                   }
                   className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-amber-500/20 border-amber-500 shadow-md shadow-amber-500/10'
+                      ? isLight
+                        ? 'bg-[#e8f0fe] border-[#1a73e8] shadow-xs'
+                        : 'bg-amber-500/20 border-amber-500 shadow-md shadow-amber-500/10'
+                      : isLight
+                      ? 'bg-slate-50 border-slate-200 hover:border-[#aecbfa]'
                       : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                   }`}
                 >
@@ -280,18 +343,30 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
                     <div className="flex items-center gap-2">
                       <Radio
                         className={`w-4 h-4 ${
-                          isSelected ? 'text-amber-400' : 'text-slate-600'
+                          isSelected
+                            ? isLight
+                              ? 'text-[#1a73e8]'
+                              : 'text-amber-400'
+                            : 'text-slate-400'
                         }`}
                       />
-                      <span className="text-xs font-bold text-white">{voice.name}</span>
+                      <span className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                        {voice.name}
+                      </span>
                     </div>
                     {voice.badge && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          isLight
+                            ? 'bg-white text-[#1967d2] border border-[#aecbfa]'
+                            : 'bg-amber-500/20 text-amber-300'
+                        }`}
+                      >
                         {voice.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1 ml-6">
+                  <p className={`text-[11px] mt-1 ml-6 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                     {voice.description}
                   </p>
                 </div>
@@ -300,18 +375,28 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
           </div>
 
           {/* Repeat count slider for target */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs">
-            <span className="text-slate-300">Target translation repetitions:</span>
+          <div
+            className={`border rounded-xl p-3 flex items-center justify-between text-xs ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/80 border-slate-800'
+            }`}
+          >
+            <span className={isLight ? 'text-slate-700 font-medium' : 'text-slate-300'}>
+              Target translation repetitions:
+            </span>
             <div className="flex items-center gap-1.5">
               {[0, 1, 2].map((num) => (
                 <button
                   key={num}
                   type="button"
                   onClick={() => onUpdateSettings({ targetRepeats: num })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                     (settings.targetRepeats ?? 1) === num
-                      ? 'bg-amber-400 text-slate-950'
-                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800'
+                      ? isLight
+                        ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8]'
+                        : 'bg-amber-400 text-slate-950 border-transparent'
+                      : isLight
+                      ? 'bg-[#1a73e8] text-white hover:bg-[#1557b0] border-[#1a73e8]'
+                      : 'bg-slate-900 text-slate-400 hover:bg-slate-800 border-transparent'
                   }`}
                 >
                   {num === 0 ? 'Mute' : `${num}x`} {num === 1 ? '(Ideal)' : ''}
@@ -323,29 +408,41 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
       </div>
 
       {/* Pauses and Delays */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-7 space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div
+        className={`border rounded-3xl p-6 sm:p-7 space-y-6 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900/90 border-slate-800'
+        }`}
+      >
+        <div className={`flex items-center justify-between border-b pb-4 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-400" />
-            <h3 className="font-bold text-white text-base">
+            <Clock className={`w-5 h-5 ${isLight ? 'text-[#1a73e8]' : 'text-amber-400'}`} />
+            <h3 className={`font-bold text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
               Precision Audio Timing & Silent Intervals (Milliseconds)
             </h3>
           </div>
           <button
             onClick={handleResetTimings}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            className={`px-3 py-1.5 border rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-transparent'
+            }`}
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className={`w-3.5 h-3.5 ${isLight ? 'text-white' : ''}`} />
             <span>Reset to Defaults</span>
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
           {/* Pause between source repetitions */}
-          <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between font-semibold text-slate-300">
+          <div
+            className={`space-y-2 p-4 rounded-2xl border ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800/80'
+            }`}
+          >
+            <div className={`flex justify-between font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
               <span>Between 1st & 2nd Repetition:</span>
-              <span className="text-indigo-400 font-mono">
+              <span className={`font-mono ${isLight ? 'text-[#1967d2]' : 'text-indigo-400'}`}>
                 {settings.pauseBetweenSource ?? 600} ms
               </span>
             </div>
@@ -369,10 +466,14 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
           </div>
 
           {/* Pause between source and target */}
-          <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between font-semibold text-slate-300">
+          <div
+            className={`space-y-2 p-4 rounded-2xl border ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800/80'
+            }`}
+          >
+            <div className={`flex justify-between font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
               <span>Between Word & Translation:</span>
-              <span className="text-amber-400 font-mono">
+              <span className={`font-mono ${isLight ? 'text-[#1967d2]' : 'text-amber-400'}`}>
                 {settings.pauseBetweenLanguages ?? 800} ms
               </span>
             </div>
@@ -388,7 +489,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
                   pauseBetweenEnAndAr: Number(e.target.value),
                 })
               }
-              className="w-full accent-amber-500 cursor-pointer"
+              className={`w-full cursor-pointer ${isLight ? 'accent-[#1a73e8]' : 'accent-amber-500'}`}
             />
             <p className="text-[10px] text-slate-500">
               Allows your brain to recall meaning before hearing the translation
@@ -396,10 +497,14 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
           </div>
 
           {/* Pause between vocabulary items */}
-          <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between font-semibold text-slate-300">
+          <div
+            className={`space-y-2 p-4 rounded-2xl border ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800/80'
+            }`}
+          >
+            <div className={`flex justify-between font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
               <span>Before Next Word in Queue:</span>
-              <span className="text-emerald-400 font-mono">
+              <span className={`font-mono ${isLight ? 'text-[#1967d2]' : 'text-emerald-400'}`}>
                 {settings.pauseBetweenWords ?? 1400} ms
               </span>
             </div>
@@ -412,7 +517,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
               onChange={(e) =>
                 onUpdateSettings({ pauseBetweenWords: Number(e.target.value) })
               }
-              className="w-full accent-emerald-500 cursor-pointer"
+              className={`w-full cursor-pointer ${isLight ? 'accent-[#1a73e8]' : 'accent-emerald-500'}`}
             />
             <p className="text-[10px] text-slate-500">
               Comfortable breath to shadow and repeat pronunciation aloud
@@ -420,10 +525,16 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
           </div>
 
           {/* Cloud API & Hosting Settings (Vercel / Standalone) */}
-          <div className="space-y-2 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80">
-            <div className="flex justify-between font-semibold text-slate-300">
+          <div
+            className={`space-y-2 p-4 rounded-2xl border ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/60 border-slate-800/80'
+            }`}
+          >
+            <div className={`flex justify-between font-semibold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
               <span>Cloud Server Endpoint:</span>
-              <span className="text-indigo-400 font-mono text-xs">Vercel &amp; Express Ready</span>
+              <span className={`font-mono text-xs ${isLight ? 'text-[#1967d2]' : 'text-indigo-400'}`}>
+                Vercel &amp; Express Ready
+              </span>
             </div>
             <input
               type="text"
@@ -437,7 +548,11 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
                   localStorage.removeItem('vocabflow_backend_url');
                 }
               }}
-              className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none"
+              className={`w-full border rounded-xl px-3 py-2 text-xs outline-none ${
+                isLight
+                  ? 'bg-white border-slate-300 focus:border-[#1a73e8] text-slate-900 placeholder:text-slate-400'
+                  : 'bg-slate-900 border-slate-700 focus:border-amber-400 text-white placeholder-slate-500'
+              }`}
             />
             <p className="text-[10px] text-slate-500">
               Deploy to Vercel with built-in serverless functions in <code>/api</code>, or specify your backend URL if hosted elsewhere.

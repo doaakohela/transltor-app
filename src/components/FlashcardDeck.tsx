@@ -25,13 +25,16 @@ interface FlashcardDeckProps {
   items: VocabularyItem[];
   settings: AudioSettings;
   onToggleMastered: (id: string) => void;
+  theme?: 'dark' | 'light';
 }
 
 export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
   items,
   settings,
   onToggleMastered,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   const [cardIndex, setCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isPlayingSeq, setIsPlayingSeq] = useState(false);
@@ -227,17 +230,27 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
   return (
     <div className="max-w-2xl mx-auto space-y-6 text-left animate-fade-in">
       {/* Top Controls Bar & Study Mode */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+      <div
+        className={`border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900/80 border-slate-800'
+        }`}
+      >
         <div className="flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${isLight ? 'bg-[#1a73e8]' : 'bg-amber-400'}`}></span>
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className={`text-sm font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
               <span>Interactive Flashcard Focus</span>
-              <span className="text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md">
+              <span
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                  isLight
+                    ? 'bg-[#e8f0fe] text-[#1967d2] border-[#aecbfa]'
+                    : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                }`}
+              >
                 2x Original + 1x Translation
               </span>
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               Card {cardIndex + 1} of {items.length} &bull; Click card or Press Space to flip
             </p>
           </div>
@@ -248,10 +261,14 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
           {/* Auto-Study Deck Toggle */}
           <button
             onClick={handleToggleAutoStudy}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md ${
-              isAutoStudying
-                ? 'bg-amber-400 text-slate-950 shadow-amber-400/25'
-                : 'bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 border border-indigo-500/40'
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md border ${
+              isLight
+                ? isAutoStudying
+                  ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-blue-500/25'
+                  : 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : isAutoStudying
+                ? 'bg-amber-400 text-slate-950 shadow-amber-400/25 border-transparent'
+                : 'bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 border-indigo-500/40'
             }`}
             title="Auto-advance cards and pronounce 2x + 1x"
           >
@@ -270,7 +287,11 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
 
           <button
             onClick={handleShuffle}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+            }`}
             title="Shuffle cards"
           >
             <Shuffle className="w-3.5 h-3.5" />
@@ -278,10 +299,14 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
 
           <button
             onClick={() => onToggleMastered(currentItem.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
               currentItem.mastered
-                ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/60'
-                : 'bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700'
+                ? isLight
+                  ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8]'
+                  : 'bg-emerald-950/70 text-emerald-300 border-emerald-800/60'
+                : isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-700'
             }`}
             title="Mark this word as mastered"
           >
@@ -292,9 +317,11 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
+      <div className={`w-full rounded-full h-1.5 overflow-hidden border ${isLight ? 'bg-slate-200 border-slate-200' : 'bg-slate-900 border-slate-800'}`}>
         <div
-          className="bg-gradient-to-r from-indigo-500 to-amber-400 h-1.5 rounded-full transition-all duration-300"
+          className={`h-1.5 rounded-full transition-all duration-300 ${
+            isLight ? 'bg-[#1a73e8]' : 'bg-gradient-to-r from-indigo-500 to-amber-400'
+          }`}
           style={{ width: `${((cardIndex + 1) / items.length) * 100}%` }}
         />
       </div>
@@ -307,31 +334,51 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
         <div
           className={`relative w-full min-h-[360px] rounded-3xl p-8 border transition-all duration-500 shadow-2xl flex flex-col justify-between text-center select-none ${
             isFlipped
-              ? 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/40 shadow-amber-500/10'
+              ? isLight
+                ? 'bg-white border-[#aecbfa] shadow-blue-500/10'
+                : 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/40 shadow-amber-500/10'
+              : isLight
+              ? 'bg-white border-slate-200 group-hover:border-[#1a73e8]'
               : 'bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-950 border-slate-800 group-hover:border-indigo-500/60'
           }`}
         >
           {/* Card Top Indicator */}
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1.5 text-slate-400 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800">
-              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+            <span
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${
+                isLight
+                  ? 'bg-[#1a73e8] text-white border-[#1a73e8]'
+                  : 'text-slate-400 bg-slate-950/60 border-slate-800'
+              }`}
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-amber-400'}`} />
               <span>Click to Flip Card</span>
             </span>
 
             {/* Audio Wave Indicator */}
             <div className="flex items-center gap-1.5">
               {isPlayingSeq && (
-                <div className="flex items-center gap-1 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800">
-                  <span className="w-1.5 h-3 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="w-1.5 h-5 rounded-full bg-indigo-400 animate-pulse delay-75" />
-                  <span className="w-1.5 h-4 rounded-full bg-amber-400 animate-pulse delay-150" />
-                  <span className="text-[10px] font-mono text-slate-300 ml-1">
+                <div
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
+                    isLight ? 'bg-[#e8f0fe] border-[#aecbfa]' : 'bg-slate-950/80 border-slate-800'
+                  }`}
+                >
+                  <span className={`w-1.5 h-3 rounded-full animate-pulse ${isLight ? 'bg-[#1a73e8]' : 'bg-amber-400'}`} />
+                  <span className={`w-1.5 h-5 rounded-full animate-pulse delay-75 ${isLight ? 'bg-[#4285f4]' : 'bg-indigo-400'}`} />
+                  <span className={`w-1.5 h-4 rounded-full animate-pulse delay-150 ${isLight ? 'bg-[#1a73e8]' : 'bg-amber-400'}`} />
+                  <span className={`text-[10px] font-mono ml-1 ${isLight ? 'text-[#1967d2]' : 'text-slate-300'}`}>
                     {isSpeakingSource ? '2x Original' : isSpeakingTarget ? '1x Translation' : 'Speaking'}
                   </span>
                 </div>
               )}
 
-              <span className="font-semibold px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-amber-300 text-xs">
+              <span
+                className={`font-semibold px-2.5 py-1 rounded-lg border text-xs ${
+                  isLight
+                    ? 'bg-[#e8f0fe] border-[#aecbfa] text-[#1967d2]'
+                    : 'bg-slate-950 border-slate-800 text-amber-300'
+                }`}
+              >
                 {isFlipped ? `${targetLang.flag} Back: Translation` : `${sourceLang.flag} Front: Word`}
               </span>
             </div>
@@ -341,10 +388,10 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
           <div className="my-auto py-8 space-y-4">
             {!isFlipped ? (
               <div className="space-y-3 animate-fade-in">
-                <span className="text-xs uppercase tracking-widest text-indigo-400 font-bold">
+                <span className={`text-xs uppercase tracking-widest font-bold ${isLight ? 'text-[#1a73e8]' : 'text-indigo-400'}`}>
                   {sourceLang.name}
                 </span>
-                <h3 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white break-words drop-shadow-md">
+                <h3 className={`text-4xl sm:text-5xl font-extrabold tracking-tight break-words drop-shadow-md ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {sourceWord}
                 </h3>
                 {currentItem.phonetic && (
@@ -355,10 +402,10 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
               </div>
             ) : (
               <div className="space-y-3 animate-fade-in">
-                <span className="text-xs uppercase tracking-widest text-amber-400 font-bold">
+                <span className={`text-xs uppercase tracking-widest font-bold ${isLight ? 'text-[#1a73e8]' : 'text-amber-400'}`}>
                   {targetLang.name} Translation
                 </span>
-                <h3 className="text-3xl sm:text-4xl font-extrabold text-amber-300 break-words drop-shadow-md">
+                <h3 className={`text-3xl sm:text-4xl font-extrabold break-words drop-shadow-md ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
                   {targetWord || 'No translation provided'}
                 </h3>
               </div>
@@ -366,13 +413,17 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
           </div>
 
           {/* Card Bottom Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800/80">
+          <div className={`flex items-center justify-between pt-4 border-t ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
             <div className="flex items-center gap-2">
               {/* Play 2x Source + 1x Target */}
               <button
                 onClick={handlePlayFullSequence}
                 disabled={isPlayingSeq && !isAutoStudying}
-                className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
+                className={`px-4 py-2.5 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md cursor-pointer ${
+                  isLight
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] shadow-blue-500/25'
+                    : 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-600/30'
+                }`}
                 title="Pronounce: 2x original word + 1x translation"
               >
                 {isPlayingSeq ? (
@@ -397,26 +448,34 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
                     isFlipped ? settings.targetVoice : settings.sourceVoice
                   );
                 }}
-                className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors cursor-pointer border border-slate-700"
+                className={`p-2.5 rounded-xl transition-colors cursor-pointer border ${
+                  isLight
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+                }`}
                 title={isFlipped ? 'Pronounce translation once' : 'Pronounce word once'}
               >
-                <Volume2 className="w-4 h-4 text-amber-400" />
+                <Volume2 className={`w-4 h-4 ${isLight ? 'text-white' : 'text-amber-400'}`} />
               </button>
             </div>
 
-            {/* Download this card's audio MP3 */}
+            {/* Download this card's audio MP3 (Kept Amber as Download Action) */}
             <button
               onClick={handleDownload}
               disabled={isDownloading}
-              className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors cursor-pointer border border-slate-700 flex items-center gap-1.5 text-xs font-semibold"
+              className={`keep-amber-btn p-2.5 rounded-xl transition-colors cursor-pointer border flex items-center gap-1.5 text-xs font-semibold ${
+                isLight
+                  ? 'keep-amber-outline bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-500'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700'
+              }`}
               title="Download this card MP3 (2x word + 1x translation)"
             >
               {isDownloading ? (
-                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
               ) : downloadSuccess ? (
-                <Check className="w-4 h-4 text-emerald-400" />
+                <Check className="w-4 h-4 text-emerald-600" />
               ) : (
-                <Download className="w-4 h-4 text-slate-300" />
+                <Download className={`w-4 h-4 ${isLight ? 'text-amber-800' : 'text-slate-300'}`} />
               )}
               <span className="hidden sm:inline">Card MP3</span>
             </button>
@@ -428,7 +487,11 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
       <div className="flex items-center justify-between gap-4">
         <button
           onClick={handlePrev}
-          className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+          className={`flex-1 py-3 px-4 border rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
+            isLight
+              ? 'bg-[#1a73e8] hover:bg-[#1557b0] border-[#1a73e8] text-white'
+              : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200'
+          }`}
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Previous Card (A / ◀)</span>
@@ -436,7 +499,11 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
 
         <button
           onClick={handleNext}
-          className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-xs sm:text-sm font-semibold text-slate-200 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+          className={`flex-1 py-3 px-4 border rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md ${
+            isLight
+              ? 'bg-[#1a73e8] hover:bg-[#1557b0] border-[#1a73e8] text-white'
+              : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200'
+          }`}
         >
           <span>Next Card (D / ▶)</span>
           <ChevronRight className="w-4 h-4" />

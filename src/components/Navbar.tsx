@@ -52,7 +52,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-2 sm:gap-3 min-w-0 sm:shrink-0 cursor-pointer group"
           title="Return to Studio Workstation"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <div
+            className={`w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform ${
+              isLight
+                ? 'bg-[#1a73e8] shadow-blue-500/25'
+                : 'bg-gradient-to-tr from-indigo-600 via-blue-500 to-amber-500 shadow-indigo-500/20'
+            }`}
+          >
             <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div className="min-w-0">
@@ -64,13 +70,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <span className="sm:hidden">
                   Translate{' '}
-                  <span className={isLight ? 'text-amber-600' : 'text-amber-400'}>
+                  <span className={isLight ? 'text-[#1a73e8]' : 'text-amber-400'}>
                     &amp; MP3
                   </span>
                 </span>
                 <span className="hidden sm:inline">
                   Translate Words, Texts{' '}
-                  <span className={isLight ? 'text-amber-600' : 'text-amber-400'}>
+                  <span className={isLight ? 'text-[#1a73e8]' : 'text-amber-400'}>
                     &amp; Convert to MP3
                   </span>
                 </span>
@@ -78,12 +84,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span
                 className={`hidden sm:flex text-xs items-center gap-1 px-1.5 py-0.5 rounded-md border shrink-0 ${
                   isLight
-                    ? 'bg-slate-100 border-slate-200 text-slate-800'
+                    ? 'bg-[#e8f0fe] border-[#aecbfa] text-[#1967d2] font-semibold'
                     : 'bg-slate-900 border-slate-800 text-slate-300'
                 }`}
               >
                 <span>{sourceFlag}</span>
-                <span className={isLight ? 'text-slate-500' : 'text-slate-400'}>➔</span>
+                <span className={isLight ? 'text-[#1a73e8]' : 'text-slate-400'}>➔</span>
                 <span>{targetFlag}</span>
               </span>
             </div>
@@ -98,22 +104,28 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Navigation Tabs (Primary Tools & Policy Pages) */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1.5">
           <button
             onClick={() => onViewChange('player')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
               currentView === 'player'
                 ? isLight
-                  ? 'bg-indigo-100 text-indigo-900 border border-indigo-300 shadow-xs'
-                  : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                  ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-sm'
+                  : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30'
                 : isLight
-                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-transparent'
             }`}
           >
             <Volume2
               className={`w-3.5 h-3.5 ${
-                isPlaying ? 'text-amber-500 animate-pulse' : isLight ? 'text-indigo-600' : 'text-slate-400'
+                isLight
+                  ? isPlaying
+                    ? 'text-white animate-pulse'
+                    : 'text-white'
+                  : isPlaying
+                  ? 'text-amber-400 animate-pulse'
+                  : 'text-slate-400'
               }`}
             />
             <span>Workstation</span>
@@ -121,33 +133,33 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => onViewChange('flashcards')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
               currentView === 'flashcards'
                 ? isLight
-                  ? 'bg-indigo-100 text-indigo-900 border border-indigo-300 shadow-xs'
-                  : 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                  ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-sm'
+                  : 'bg-indigo-600/20 text-indigo-300 border-indigo-500/30'
                 : isLight
-                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-transparent'
             }`}
           >
-            <Layers className={`w-3.5 h-3.5 ${isLight ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <Layers className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-slate-400'}`} />
             <span>Flashcards</span>
           </button>
 
           <button
             onClick={() => onViewChange('studio')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
               currentView === 'studio'
                 ? isLight
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs'
+                  ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-sm'
                   : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                 : isLight
-                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-transparent'
             }`}
           >
-            <Sliders className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+            <Sliders className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-amber-400'}`} />
             <span>Voice Settings</span>
           </button>
 
@@ -156,49 +168,49 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* AdSense Essential Nav Pages */}
           <button
             onClick={() => onViewChange('about')}
-            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer border ${
               currentView === 'about'
                 ? isLight
-                  ? 'text-amber-700 font-bold bg-amber-100 border border-amber-200'
-                  : 'text-amber-400 font-bold bg-amber-500/10'
+                  ? 'bg-[#174ea6] text-white font-bold border-[#174ea6] ring-2 ring-[#8ab4f8]'
+                  : 'text-amber-400 font-bold bg-amber-500/10 border-transparent'
                 : isLight
-                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-transparent'
             }`}
           >
-            <Info className="w-3.5 h-3.5" />
+            <Info className={`w-3.5 h-3.5 ${isLight ? 'text-white' : ''}`} />
             <span>About</span>
           </button>
 
           <button
             onClick={() => onViewChange('contact')}
-            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer border ${
               currentView === 'contact'
                 ? isLight
-                  ? 'text-amber-700 font-bold bg-amber-100 border border-amber-200'
-                  : 'text-amber-400 font-bold bg-amber-500/10'
+                  ? 'bg-[#174ea6] text-white font-bold border-[#174ea6] ring-2 ring-[#8ab4f8]'
+                  : 'text-amber-400 font-bold bg-amber-500/10 border-transparent'
                 : isLight
-                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-transparent'
             }`}
           >
-            <Mail className="w-3.5 h-3.5" />
+            <Mail className={`w-3.5 h-3.5 ${isLight ? 'text-white' : ''}`} />
             <span>Contact</span>
           </button>
 
           <button
             onClick={() => onViewChange('privacy')}
-            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer border ${
               currentView === 'privacy'
                 ? isLight
-                  ? 'text-amber-700 font-bold bg-amber-100 border border-amber-200'
-                  : 'text-amber-400 font-bold bg-amber-500/10'
+                  ? 'bg-[#174ea6] text-white font-bold border-[#174ea6] ring-2 ring-[#8ab4f8]'
+                  : 'text-amber-400 font-bold bg-amber-500/10 border-transparent'
                 : isLight
-                ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border-transparent'
             }`}
           >
-            <Shield className="w-3.5 h-3.5" />
+            <Shield className={`w-3.5 h-3.5 ${isLight ? 'text-white' : ''}`} />
             <span>Privacy</span>
           </button>
         </nav>
@@ -211,7 +223,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onToggleTheme}
             className={`px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
               isLight
-                ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold border-amber-300 shadow-xs'
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white font-bold border-[#1a73e8] shadow-sm'
                 : 'bg-slate-900/90 hover:bg-slate-800 text-amber-300 border-slate-700/80 hover:border-amber-400/50'
             }`}
             title={isLight ? 'Switch to Night Mode (الوضع الليلي)' : 'Switch to Day Mode (الوضع النهاري)'}
@@ -219,7 +231,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             {isLight ? (
               <>
-                <Moon className="w-4 h-4 text-indigo-700 stroke-[2.2]" />
+                <Moon className="w-4 h-4 text-white stroke-[2.2]" />
                 <span className="hidden sm:inline">Night Mode</span>
               </>
             ) : (
@@ -230,10 +242,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
-          {/* Import List Button */}
+          {/* Import List Button (Preserved Amber Exception) */}
           <button
             onClick={onOpenAddModal}
-            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-all shadow-md shadow-amber-400/20 flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+            className="keep-amber-btn px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-all shadow-md shadow-amber-400/20 flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline">Import List</span>

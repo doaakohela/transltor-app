@@ -24,6 +24,7 @@ interface WordListTableProps {
   onToggleMastered: (id: string) => void;
   onUpdateItem: (id: string, sourceText: string, targetText: string) => void;
   onPlayItem: (item: VocabularyItem) => void;
+  theme?: 'dark' | 'light';
 }
 
 export const WordListTable: React.FC<WordListTableProps> = ({
@@ -33,7 +34,9 @@ export const WordListTable: React.FC<WordListTableProps> = ({
   onToggleMastered,
   onUpdateItem,
   onPlayItem,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'learning' | 'mastered'>('all');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -149,28 +152,48 @@ export const WordListTable: React.FC<WordListTableProps> = ({
       </div>
 
       {/* Top search & filter bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+      <div
+        className={`border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}
+      >
         {/* Search Input */}
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search
+            className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${
+              isLight ? 'text-[#1a73e8]' : 'text-slate-500'
+            }`}
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search words or translations..."
-            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl pl-10 pr-3 py-2 text-xs text-white placeholder-slate-500 transition-colors outline-none"
+            className={`w-full border rounded-xl pl-10 pr-3 py-2 text-xs transition-colors outline-none ${
+              isLight
+                ? 'bg-slate-50 border-slate-300 focus:border-[#1a73e8] text-slate-900 placeholder:text-slate-500'
+                : 'bg-slate-950 border-slate-700 focus:border-amber-400 text-white placeholder-slate-500'
+            }`}
           />
         </div>
 
         {/* Filter buttons & Batch Export */}
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 text-xs">
+          <div
+            className={`flex items-center gap-1 border rounded-xl p-1 text-xs ${
+              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+            }`}
+          >
             <button
               onClick={() => setFilterType('all')}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer border ${
                 filterType === 'all'
-                  ? 'bg-slate-800 text-white font-medium'
-                  : 'text-slate-400 hover:text-white'
+                  ? isLight
+                    ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
+                    : 'bg-slate-800 text-white border-transparent font-medium'
+                  : isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                  : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
               All ({items.length})
@@ -178,10 +201,14 @@ export const WordListTable: React.FC<WordListTableProps> = ({
 
             <button
               onClick={() => setFilterType('learning')}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer border ${
                 filterType === 'learning'
-                  ? 'bg-indigo-600/30 text-indigo-300 font-medium'
-                  : 'text-slate-400 hover:text-white'
+                  ? isLight
+                    ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
+                    : 'bg-indigo-600/30 text-indigo-300 border-transparent font-medium'
+                  : isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                  : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
               Learning ({items.filter((i) => !i.mastered).length})
@@ -189,29 +216,37 @@ export const WordListTable: React.FC<WordListTableProps> = ({
 
             <button
               onClick={() => setFilterType('mastered')}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer border ${
                 filterType === 'mastered'
-                  ? 'bg-emerald-600/30 text-emerald-300 font-medium'
-                  : 'text-slate-400 hover:text-white'
+                  ? isLight
+                    ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
+                    : 'bg-emerald-600/30 text-emerald-300 border-transparent font-medium'
+                  : isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                  : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
               Mastered ({items.filter((i) => i.mastered).length})
             </button>
           </div>
 
-          {/* Batch MP3 Button */}
+          {/* Batch MP3 Button (Kept Amber as Download Action) */}
           <button
             onClick={handleBatchDownload}
             disabled={isBatchDownloading || items.length === 0}
-            className="px-3 py-2 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+            className={`keep-amber-btn px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
+              isLight
+                ? 'keep-amber-outline bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-500'
+                : 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border-amber-400/30'
+            }`}
             title="Download all words as a single sequential MP3 file"
           >
             {isBatchDownloading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700" />
             ) : batchSuccess ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
             ) : (
-              <FolderDown className="w-3.5 h-3.5 text-amber-400" />
+              <FolderDown className={`w-3.5 h-3.5 ${isLight ? 'text-amber-800' : 'text-amber-400'}`} />
             )}
             <span>Download Master MP3</span>
           </button>
@@ -219,33 +254,47 @@ export const WordListTable: React.FC<WordListTableProps> = ({
           {/* Export Text */}
           <button
             onClick={handleExportText}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+            className={`px-3 py-2 border rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-transparent'
+            }`}
             title="Export word list as tab-delimited text file"
           >
-            <FileDown className="w-3.5 h-3.5 text-slate-400" />
+            <FileDown className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-slate-400'}`} />
             <span className="hidden md:inline">Export TXT</span>
           </button>
         </div>
       </div>
 
       {/* Table Container */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div
+        className={`border rounded-2xl overflow-hidden shadow-xl ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/70 text-slate-400 text-xs">
-                <th className="py-3 px-4 font-semibold">#</th>
-                <th className="py-3 px-4 font-semibold">
+              <tr
+                className={`border-b text-xs ${
+                  isLight
+                    ? 'border-slate-200 bg-slate-50 text-slate-700'
+                    : 'border-slate-800 bg-slate-950/70 text-slate-400'
+                }`}
+              >
+                <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold">#</th>
+                <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold">
                   {sourceLang.flag} Word ({sourceLang.name})
                 </th>
-                <th className="py-3 px-4 font-semibold">
+                <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold">
                   {targetLang.flag} Translation ({targetLang.name})
                 </th>
-                <th className="py-3 px-4 font-semibold text-center">Status</th>
-                <th className="py-3 px-4 font-semibold text-right">Actions</th>
+                <th className="hidden md:table-cell py-3 px-4 font-semibold text-center">Status</th>
+                <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+            <tbody className={`divide-y text-xs sm:text-sm ${isLight ? 'divide-slate-100' : 'divide-slate-800/60'}`}>
               {filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-500">
@@ -261,25 +310,31 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-slate-850/50 transition-colors group"
+                      className={`transition-colors group ${
+                        isLight ? 'hover:bg-slate-50/90' : 'hover:bg-slate-850/50'
+                      }`}
                     >
                       {/* Index */}
-                      <td className="py-3.5 px-4 text-slate-500 font-mono text-xs">
+                      <td className="py-2.5 px-2 md:py-3.5 md:px-4 text-slate-500 font-mono text-xs align-top md:align-middle">
                         {index + 1}
                       </td>
 
                       {/* Source Word */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-2 md:py-3.5 md:px-4 min-w-0 break-words align-top md:align-middle">
                         {isEditing ? (
                           <input
                             type="text"
                             value={editSource}
                             onChange={(e) => setEditSource(e.target.value)}
-                            className="bg-slate-950 border border-indigo-500 rounded-lg px-2.5 py-1 text-sm text-white w-full outline-none"
+                            className={`border rounded-lg px-2.5 py-1 text-sm w-full outline-none ${
+                              isLight
+                                ? 'bg-white border-[#1a73e8] text-slate-900'
+                                : 'bg-slate-950 border-indigo-500 text-white'
+                            }`}
                           />
                         ) : (
                           <div>
-                            <span className="font-semibold text-white text-base">
+                            <span className={`font-semibold text-sm md:text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
                               {srcWord}
                             </span>
                             {item.phonetic && (
@@ -292,29 +347,37 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                       </td>
 
                       {/* Target Translation */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-2 md:py-3.5 md:px-4 min-w-0 break-words align-top md:align-middle">
                         {isEditing ? (
                           <input
                             type="text"
                             value={editTarget}
                             onChange={(e) => setEditTarget(e.target.value)}
-                            className="bg-slate-950 border border-amber-500 rounded-lg px-2.5 py-1 text-sm text-white w-full outline-none"
+                            className={`border rounded-lg px-2.5 py-1 text-sm w-full outline-none ${
+                              isLight
+                                ? 'bg-white border-[#1a73e8] text-slate-900'
+                                : 'bg-slate-950 border-amber-500 text-white'
+                            }`}
                           />
                         ) : (
-                          <span className="text-amber-300 font-medium text-sm">
+                          <span className={`font-medium text-xs sm:text-sm ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
                             {tgtWord || 'No translation provided'}
                           </span>
                         )}
                       </td>
 
-                      {/* Mastered Status */}
-                      <td className="py-3.5 px-4 text-center">
+                      {/* Mastered Status (Hidden on mobile < 768px so action icons fit cleanly without scrolling) */}
+                      <td className="hidden md:table-cell py-3.5 px-4 text-center">
                         <button
                           onClick={() => onToggleMastered(item.id)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-full text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer border ${
                             item.mastered
-                              ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/60'
-                              : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+                              ? isLight
+                                ? 'bg-[#174ea6] hover:bg-[#1557b0] text-white border-[#174ea6] font-semibold'
+                                : 'bg-emerald-950/70 text-emerald-300 border-emerald-800/60'
+                              : isLight
+                              ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] font-medium'
+                              : 'bg-slate-800 text-slate-400 hover:text-slate-200 border-transparent'
                           }`}
                         >
                           <CheckCircle className="w-3 h-3" />
@@ -322,56 +385,72 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                         </button>
                       </td>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {isEditing ? (
-                            <>
-                              <button
-                                onClick={() => saveEdit(item.id)}
-                                className="p-1.5 text-emerald-400 hover:bg-slate-800 rounded-lg cursor-pointer"
-                                title="Save changes"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={cancelEdit}
-                                className="p-1.5 text-slate-400 hover:bg-slate-800 rounded-lg cursor-pointer"
-                                title="Cancel"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {/* Individual Pronunciation Button */}
-                              <button
-                                onClick={() => onPlayItem(item)}
-                                className="px-3 py-1.5 bg-gradient-to-r from-indigo-600/30 to-blue-600/20 hover:from-indigo-600/50 hover:to-blue-600/40 text-indigo-200 hover:text-white border border-indigo-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap"
-                                title="Pronounce this word separately (2x source + 1x target)"
-                              >
-                                <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-                                <span>Listen</span>
-                              </button>
+                      {/* Actions (On mobile: Listen on top, Download/Edit/Delete wrapped underneath; On Tablet/Desktop: single horizontal row) */}
+                      <td className="py-2.5 px-2 md:py-3.5 md:px-4 text-right align-top md:align-middle">
+                        {isEditing ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => saveEdit(item.id)}
+                              className={`p-1.5 rounded-lg cursor-pointer ${
+                                isLight ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white' : 'text-emerald-400 hover:bg-slate-800'
+                              }`}
+                              title="Save changes"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className={`p-1.5 rounded-lg cursor-pointer ${
+                                isLight ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white' : 'text-slate-400 hover:bg-slate-800'
+                              }`}
+                              title="Cancel"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-end gap-1.5 md:flex-row md:items-center md:justify-end">
+                            {/* Individual Pronunciation Button */}
+                            <button
+                              onClick={() => onPlayItem(item)}
+                              className={`px-3 py-1.5 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap ${
+                                isLight
+                                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                                  : 'bg-gradient-to-r from-indigo-600/30 to-blue-600/20 hover:from-indigo-600/50 hover:to-blue-600/40 text-indigo-200 hover:text-white border-indigo-500/40'
+                              }`}
+                              title="Pronounce this word separately (2x source + 1x target)"
+                            >
+                              <Volume2 className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-amber-400'}`} />
+                              <span>Listen</span>
+                            </button>
 
-                              {/* Download Row MP3 */}
+                            <div className="flex items-center justify-end gap-1 md:gap-1.5">
+                              {/* Download Row MP3 (Kept Amber as Download Action) */}
                               <button
                                 onClick={() => handleDownloadRow(item)}
                                 disabled={downloadingId === item.id}
-                                className="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                                className={`keep-amber-btn p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
+                                  isLight
+                                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-500 shadow-xs'
+                                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800 border-transparent'
+                                }`}
                                 title="Download MP3 for this word"
                               >
                                 {downloadingId === item.id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                                  <Loader2 className={`w-3.5 h-3.5 md:w-4 md:h-4 animate-spin ${isLight ? 'text-slate-950' : 'text-amber-600'}`} />
                                 ) : (
-                                  <Download className="w-4 h-4" />
+                                  <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 )}
                               </button>
 
                               {/* Edit Button */}
                               <button
                                 onClick={() => startEdit(item)}
-                                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                                className={`p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
+                                  isLight
+                                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent'
+                                }`}
                                 title="Edit word"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -380,14 +459,18 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                               {/* Delete Button */}
                               <button
                                 onClick={() => onDeleteItem(item.id)}
-                                className="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                                className={`p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
+                                  isLight
+                                    ? 'bg-[#1a73e8] hover:bg-red-600 text-white border-[#1a73e8] hover:border-red-600 shadow-xs'
+                                    : 'text-slate-500 hover:text-red-400 hover:bg-slate-800 border-transparent'
+                                }`}
                                 title="Delete word"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            </>
-                          )}
-                        </div>
+                            </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
