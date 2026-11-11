@@ -35,6 +35,7 @@ interface ContinuousPlayerProps {
   onToggleMastered: (id: string) => void;
   onUpdateSettings: (settings: Partial<AudioSettings>) => void;
   theme?: 'dark' | 'light';
+  viewSection?: 'all' | 'player' | 'download';
 }
 
 const CHUNK_SIZE = 100;
@@ -52,6 +53,7 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
   onToggleMastered,
   onUpdateSettings,
   theme = 'dark',
+  viewSection = 'all',
 }) => {
   const isLight = theme === 'light';
   const [selectedPartIndex, setSelectedPartIndex] = useState(0);
@@ -63,8 +65,6 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
   const [downloadProgressText, setDownloadProgressText] = useState('');
 
   const currentItem = items[currentIndex] || items[0];
-  const sourceLang = getLanguageByCode(settings.sourceLang || 'en-US');
-  const targetLang = getLanguageByCode(settings.targetLang || 'es-ES');
 
   // Calculate chunks of 100 words
   const totalParts = Math.max(1, Math.ceil(items.length / CHUNK_SIZE));
@@ -140,12 +140,23 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
   };
 
   if (!currentItem) {
+    if (viewSection === 'download') {
+      return null;
+    }
     return (
-      <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 space-y-3">
-        <Volume2 className="w-12 h-12 text-slate-600 mx-auto" />
-        <h4 className="text-base font-semibold text-white">Your Vocabulary List is Empty</h4>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">
-          Type or paste words in the input box above, click "Demo Sample List", or upload a text file to start listening and converting to MP3!
+      <div
+        className={`border rounded-3xl p-10 sm:p-12 text-center space-y-3 ${
+          isLight
+            ? 'bg-white border-slate-200 text-slate-600 shadow-lg'
+            : 'bg-slate-900/60 border-slate-800 text-slate-400'
+        }`}
+      >
+        <Volume2 className={`w-12 h-12 mx-auto ${isLight ? 'text-[#1a73e8]' : 'text-slate-600'}`} />
+        <h4 className={`text-base font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          Your Vocabulary List is Empty
+        </h4>
+        <p className={`text-xs max-w-md mx-auto ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+          Add translated words above, paste words in Bulk Word &amp; Text Input below, or import a file to start listening and converting to MP3!
         </p>
       </div>
     );
@@ -159,11 +170,15 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
   const isTgtActive = stage === 'target_1' || stage === 'ar_1';
   const isSpeaking = isSrc1Active || isSrc2Active || isTgtActive;
 
+  const showPlayerCard = viewSection === 'all' || viewSection === 'player';
+  const showDownloadCard = viewSection === 'all' || viewSection === 'download';
+
   return (
     <div className="space-y-6 text-left">
-      {/* Dual Cards Grid (Screenshot 3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Cards Container: Dual grid when 'all', full-width standalone card when separated */}
+      <div className={viewSection === 'all' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'w-full'}>
         {/* CARD 1 (LEFT): LIVE CONTINUOUS PLAYER */}
+        {showPlayerCard && (
         <div
           className={`relative overflow-hidden rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-colors border ${
             isLight
@@ -341,8 +356,10 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
             </button>
           </div>
         </div>
+        )}
 
         {/* CARD 2 (RIGHT): DOWNLOAD MP3 AUDIO FILES */}
+        {showDownloadCard && (
         <div
           className={`relative overflow-hidden rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-colors border ${
             isLight
@@ -516,10 +533,11 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Playlist Drawer */}
-      {showPlaylist && (
+      {showPlayerCard && showPlaylist && (
         <div
           className={`border rounded-3xl p-5 shadow-xl animate-fade-in text-left ${
             isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'

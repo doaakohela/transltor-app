@@ -451,10 +451,10 @@ export default function App() {
         {/* Top Google AdSense Responsive Leaderboard Unit */}
         <AdSenseSlot format="leaderboard" />
 
-        {/* Studio Workstation Views (Translation, Flashcards, Voice Studio) */}
+        {/* Studio Workstation Views (Translation, Live Player, Vocabulary Table, Bulk Input, MP3 Download, Voices) */}
         {currentView === 'player' && (
           <div className="space-y-6 animate-fade-in">
-            {/* Top Google Translate Section */}
+            {/* Card 1: Top Google Translate Section */}
             <GoogleTranslateSection
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
@@ -462,14 +462,71 @@ export default function App() {
               theme={theme}
             />
 
-            {/* Universal Language & Voice Selector */}
+            {/* Card 2: Live Listening Continuous Player (Immediately after Translation) */}
+            <ContinuousPlayer
+              items={items}
+              currentIndex={currentIndex}
+              isPlaying={isPlaying}
+              stage={playbackStage}
+              settings={settings}
+              onPlayToggle={handleTogglePlay}
+              onNext={handleNext}
+              onPrev={handlePrev}
+              onSelectIndex={handleSelectIndex}
+              onToggleMastered={handleToggleMastered}
+              onUpdateSettings={handleUpdateSettings}
+              theme={theme}
+              viewSection="player"
+            />
+
+            {/* Card 3: Vocabulary Table with Actions Column */}
+            <WordListTable
+              items={items}
+              settings={settings}
+              onDeleteItem={handleDeleteItem}
+              onToggleMastered={handleToggleMastered}
+              onUpdateItem={handleUpdateItem}
+              onPlayItem={handlePlayItem}
+              theme={theme}
+            />
+
+            {/* Card 4: Bulk Word & Text Input */}
+            <BulkTextareaWorkstation
+              items={items}
+              onSetItems={setItems}
+              sourceLangName={sourceLang.name}
+              targetLangName={targetLang.name}
+              theme={theme}
+            />
+
+            {/* Card 5: Download MP3 Audio Files (All Words & Parts) */}
+            <ContinuousPlayer
+              items={items}
+              currentIndex={currentIndex}
+              isPlaying={isPlaying}
+              stage={playbackStage}
+              settings={settings}
+              onPlayToggle={handleTogglePlay}
+              onNext={handleNext}
+              onPrev={handlePrev}
+              onSelectIndex={handleSelectIndex}
+              onToggleMastered={handleToggleMastered}
+              onUpdateSettings={handleUpdateSettings}
+              theme={theme}
+              viewSection="download"
+            />
+
+            {/* Mid-Content In-Feed Google AdSense Slot */}
+            <AdSenseSlot format="in-feed" />
+
+            {/* Card 6: Universal Language & Studio Voice Selector */}
             <LanguageSelector
               settings={settings}
               onUpdateSettings={handleUpdateSettings}
               theme={theme}
             />
 
-            {/* View Switcher Tabs Bar */}
+            {/* Card 7: View Switcher Tabs Bar (Flashcards & Voice Settings) */}
             <div
               className={`flex items-center justify-between rounded-2xl p-2 gap-2 overflow-x-auto border transition-colors ${
                 theme === 'light'
@@ -552,45 +609,6 @@ export default function App() {
                 </button>
               </div>
             </div>
-
-            {/* Section 1: Bulk Input Textarea Workstation */}
-            <BulkTextareaWorkstation
-              items={items}
-              onSetItems={setItems}
-              sourceLangName={sourceLang.name}
-              targetLangName={targetLang.name}
-              theme={theme}
-            />
-
-            {/* Mid-Content In-Feed Google AdSense Slot (Between Workstation and Player) */}
-            <AdSenseSlot format="in-feed" />
-
-            {/* Section 2: Dual Action Cards: Player + MP3 Downloader */}
-            <ContinuousPlayer
-              items={items}
-              currentIndex={currentIndex}
-              isPlaying={isPlaying}
-              stage={playbackStage}
-              settings={settings}
-              onPlayToggle={handleTogglePlay}
-              onNext={handleNext}
-              onPrev={handlePrev}
-              onSelectIndex={handleSelectIndex}
-              onToggleMastered={handleToggleMastered}
-              onUpdateSettings={handleUpdateSettings}
-              theme={theme}
-            />
-
-            {/* Section 3: Discovered Vocabulary Table with Individual Pronunciation */}
-            <WordListTable
-              items={items}
-              settings={settings}
-              onDeleteItem={handleDeleteItem}
-              onToggleMastered={handleToggleMastered}
-              onUpdateItem={handleUpdateItem}
-              onPlayItem={handlePlayItem}
-              theme={theme}
-            />
 
             {/* Semantic SEO & FAQ Guide for Search Engine Ranking */}
             <SeoFaqSection theme={theme} />
