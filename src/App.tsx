@@ -22,7 +22,6 @@ import {
   Layers,
   Sparkles,
   AlertCircle,
-  Globe,
   FolderDown,
   Repeat,
 } from 'lucide-react';
@@ -199,7 +198,6 @@ export default function App() {
 
   // Modals and UI state
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
@@ -447,63 +445,8 @@ export default function App() {
         onToggleTheme={handleToggleTheme}
       />
 
-      {/* Main Content Area */}
-      <main
-        className={`flex-1 w-full mx-auto py-4 space-y-6 transition-all duration-300 ${
-          isExpanded ? 'max-w-[98%] px-3 sm:px-6' : 'max-w-6xl px-4 sm:px-6'
-        }`}
-      >
-        {/* Top Header Controls & Official App Badge (Replaces old partner banner) */}
-        <div
-          className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl p-3 sm:p-4 border transition-colors ${
-            theme === 'light'
-              ? 'bg-white border-slate-200 shadow-sm'
-              : 'bg-slate-900/60 border-slate-800/80 shadow-sm'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <div className={`text-xs sm:text-sm ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>
-              <span className={`font-semibold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>
-                Universal Neural Audio &amp; Translation Studio
-              </span>
-              <span className={`mx-2 hidden md:inline ${theme === 'light' ? 'text-slate-400' : 'text-slate-500'}`}>·</span>
-              <span className={`text-xs hidden md:inline ${theme === 'light' ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
-                {is2x1x ? '2x Word + 1x Translation' : '1x Word + 2x Translation'} Memorization
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-            {/* In-Place Maximize Window Toggle */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5 cursor-pointer border ${
-                theme === 'light'
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-xs'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-700'
-              }`}
-              title="Toggle in-place expanded workstation view"
-            >
-              <span>{isExpanded ? '⤡ Compact View' : '⤢ Maximize View'}</span>
-            </button>
-
-            <a
-              href="https://www.transltor.xyz"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1 cursor-pointer border ${
-                theme === 'light'
-                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border-indigo-200 font-bold shadow-xs'
-                  : 'bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 border-indigo-800/60'
-              }`}
-              title="Visit Official Domain"
-            >
-              <Globe className={`w-3.5 h-3.5 shrink-0 ${theme === 'light' ? 'text-indigo-600' : 'text-indigo-400'}`} />
-              <span>www.transltor.xyz ↗</span>
-            </a>
-          </div>
-        </div>
+      {/* Main Content Area (Auto-maximized on mobile for maximum workspace width) */}
+      <main className="flex-1 w-full mx-auto py-3 sm:py-4 space-y-5 sm:space-y-6 max-w-[98%] px-2 sm:px-4 md:max-w-6xl md:px-6 transition-all duration-300">
 
         {/* Top Google AdSense Responsive Leaderboard Unit */}
         <AdSenseSlot format="leaderboard" />

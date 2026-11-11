@@ -45,30 +45,38 @@ export const Navbar: React.FC<NavbarProps> = ({
           : 'bg-slate-950/95 border-slate-800 shadow-lg'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 md:gap-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-3 md:gap-6">
         {/* Brand & Language Flags */}
         <div
           onClick={() => onViewChange('player')}
-          className="flex items-center gap-3 shrink-0 cursor-pointer group"
+          className="flex items-center gap-2 sm:gap-3 min-w-0 sm:shrink-0 cursor-pointer group"
           title="Return to Studio Workstation"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <Volume2 className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-500 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <span
-                className={`text-sm sm:text-base font-bold tracking-tight font-sans whitespace-nowrap ${
+                className={`text-sm sm:text-base font-bold tracking-tight font-sans whitespace-nowrap truncate ${
                   isLight ? 'text-slate-900' : 'text-white'
                 }`}
               >
-                Translate Words, Texts{' '}
-                <span className={isLight ? 'text-amber-600' : 'text-amber-400'}>
-                  &amp; Convert to MP3
+                <span className="sm:hidden">
+                  Translate{' '}
+                  <span className={isLight ? 'text-amber-600' : 'text-amber-400'}>
+                    &amp; MP3
+                  </span>
+                </span>
+                <span className="hidden sm:inline">
+                  Translate Words, Texts{' '}
+                  <span className={isLight ? 'text-amber-600' : 'text-amber-400'}>
+                    &amp; Convert to MP3
+                  </span>
                 </span>
               </span>
               <span
-                className={`text-xs flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
+                className={`hidden sm:flex text-xs items-center gap-1 px-1.5 py-0.5 rounded-md border shrink-0 ${
                   isLight
                     ? 'bg-slate-100 border-slate-200 text-slate-800'
                     : 'bg-slate-900 border-slate-800 text-slate-300'
@@ -225,7 +233,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Import List Button */}
           <button
             onClick={onOpenAddModal}
-            className="px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-all shadow-md shadow-amber-400/20 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-all shadow-md shadow-amber-400/20 flex items-center gap-1 sm:gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span className="hidden sm:inline">Import List</span>
