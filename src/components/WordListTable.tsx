@@ -131,29 +131,44 @@ export const WordListTable: React.FC<WordListTableProps> = ({
   };
 
   return (
-    <div className="space-y-4 text-left">
-      {/* Table Title & Guidance Banner (Screenshot 2) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
+    <div className="space-y-2.5 sm:space-y-4 text-left">
+      {/* Table Title & Guidance Banner (Compact 1-line on Mobile <640px; Full on Tablet/Desktop) */}
+      <div
+        className={`border rounded-2xl px-3.5 py-2.5 sm:p-5 shadow-lg flex flex-row items-center justify-between gap-2 sm:gap-3 ${
+          isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+        }`}
+      >
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            <h3 className="text-base font-bold text-white tracking-tight">
-              Discovered Vocabulary Table ({items.length} Words)
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
+            <h3 className={`text-sm sm:text-base font-bold tracking-tight truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <span className="sm:hidden">Word List ({items.length})</span>
+              <span className="hidden sm:inline">Discovered Vocabulary Table ({items.length} Words)</span>
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            💡 Each word is separated below. Click <strong className="text-amber-400">🔊 Listen</strong> to pronounce any word separately on demand!
+          <p className={`hidden sm:block text-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            💡 Each word is separated below. Click <strong className={isLight ? 'text-[#1967d2]' : 'text-amber-400'}>🔊 Listen</strong> to pronounce any word separately on demand!
           </p>
         </div>
 
-        <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 rounded-lg shrink-0">
+        {/* Short mobile hint + full Desktop/Tablet badge */}
+        <span
+          className={`sm:hidden px-2 py-0.5 text-[11px] font-semibold rounded-md shrink-0 whitespace-nowrap border ${
+            isLight
+              ? 'bg-[#e8f0fe] text-[#1967d2] border-[#aecbfa]'
+              : 'bg-emerald-950/60 text-emerald-300 border-emerald-800/40'
+          }`}
+        >
+          🔊 Tap Listen
+        </span>
+        <span className="hidden sm:inline-block px-2.5 py-1 text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 rounded-lg shrink-0">
           Individual Word Pronunciation Active
         </span>
       </div>
 
       {/* Top search & filter bar */}
       <div
-        className={`border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg ${
+        className={`border rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 shadow-lg ${
           isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
         }`}
       >
@@ -177,16 +192,16 @@ export const WordListTable: React.FC<WordListTableProps> = ({
           />
         </div>
 
-        {/* Filter buttons & Batch Export */}
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        {/* Filter buttons & Batch Export (Single row of 4 buttons on Mobile; full layout on Tablet/Desktop) */}
+        <div className="flex flex-nowrap sm:flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-end">
           <div
-            className={`flex items-center gap-1 border rounded-xl p-1 text-xs ${
+            className={`flex items-center gap-1 border rounded-xl p-0.5 sm:p-1 text-[11px] sm:text-xs shrink-0 ${
               isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
             }`}
           >
             <button
               onClick={() => setFilterType('all')}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer border ${
+              className={`hidden sm:inline-flex px-3 py-1 rounded-lg transition-colors cursor-pointer border whitespace-nowrap ${
                 filterType === 'all'
                   ? isLight
                     ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
@@ -200,8 +215,8 @@ export const WordListTable: React.FC<WordListTableProps> = ({
             </button>
 
             <button
-              onClick={() => setFilterType('learning')}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer border ${
+              onClick={() => setFilterType(filterType === 'learning' ? 'all' : 'learning')}
+              className={`px-2 sm:px-3 py-1.5 sm:py-1 rounded-lg transition-colors cursor-pointer border whitespace-nowrap ${
                 filterType === 'learning'
                   ? isLight
                     ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
@@ -211,12 +226,13 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
-              Learning ({items.filter((i) => !i.mastered).length})
+              <span className="sm:hidden">Learn ({items.filter((i) => !i.mastered).length})</span>
+              <span className="hidden sm:inline">Learning ({items.filter((i) => !i.mastered).length})</span>
             </button>
 
             <button
-              onClick={() => setFilterType('mastered')}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer border ${
+              onClick={() => setFilterType(filterType === 'mastered' ? 'all' : 'mastered')}
+              className={`px-2 sm:px-3 py-1.5 sm:py-1 rounded-lg transition-colors cursor-pointer border whitespace-nowrap ${
                 filterType === 'mastered'
                   ? isLight
                     ? 'bg-[#174ea6] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] font-bold'
@@ -226,44 +242,48 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
-              Mastered ({items.filter((i) => i.mastered).length})
+              <span className="sm:hidden">Master ({items.filter((i) => i.mastered).length})</span>
+              <span className="hidden sm:inline">Mastered ({items.filter((i) => i.mastered).length})</span>
             </button>
           </div>
 
-          {/* Batch MP3 Button (Kept Amber as Download Action) */}
-          <button
-            onClick={handleBatchDownload}
-            disabled={isBatchDownloading || items.length === 0}
-            className={`keep-amber-btn px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer border ${
-              isLight
-                ? 'keep-amber-outline bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-500'
-                : 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border-amber-400/30'
-            }`}
-            title="Download all words as a single sequential MP3 file"
-          >
-            {isBatchDownloading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700" />
-            ) : batchSuccess ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <FolderDown className={`w-3.5 h-3.5 ${isLight ? 'text-amber-800' : 'text-amber-400'}`} />
-            )}
-            <span>Download Master MP3</span>
-          </button>
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Batch MP3 Button (Kept Amber as Download Action; short label on mobile) */}
+            <button
+              onClick={handleBatchDownload}
+              disabled={isBatchDownloading || items.length === 0}
+              className={`keep-amber-btn px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold transition-all flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap cursor-pointer border ${
+                isLight
+                  ? 'keep-amber-outline bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-500'
+                  : 'bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border-amber-400/30'
+              }`}
+              title="Download all words as a single sequential MP3 file"
+            >
+              {isBatchDownloading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-700 shrink-0" />
+              ) : batchSuccess ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              ) : (
+                <FolderDown className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-800' : 'text-amber-400'}`} />
+              )}
+              <span className="sm:hidden">MP3</span>
+              <span className="hidden sm:inline">Download Master MP3</span>
+            </button>
 
-          {/* Export Text */}
-          <button
-            onClick={handleExportText}
-            className={`px-3 py-2 border rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              isLight
-                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-transparent'
-            }`}
-            title="Export word list as tab-delimited text file"
-          >
-            <FileDown className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-slate-400'}`} />
-            <span className="hidden md:inline">Export TXT</span>
-          </button>
+            {/* Export Text */}
+            <button
+              onClick={handleExportText}
+              className={`px-2.5 py-1.5 sm:px-3 sm:py-2 border rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-transparent'
+              }`}
+              title="Export word list as tab-delimited text file"
+            >
+              <FileDown className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-slate-400'}`} />
+              <span className="hidden md:inline">Export TXT</span>
+            </button>
+          </div>
         </div>
       </div>
 

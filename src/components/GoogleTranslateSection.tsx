@@ -841,26 +841,22 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
               </button>
             </div>
 
-            {/* Quick Add to Vocabulary List */}
+            {/* Quick Add to Vocabulary List (Amber/Orange matching Import & Download buttons in Day & Night modes) */}
             <button
               type="button"
               onClick={handleAddToVocab}
               disabled={!sourceText.trim() || !translatedText.trim()}
-              className={`px-3.5 py-1.5 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:cursor-not-allowed ${
-                isLight
-                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] disabled:hover:bg-[#1a73e8] text-white shadow-blue-500/20'
-                  : 'disabled:opacity-35 bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-amber-400/20'
-              }`}
+              className="keep-amber-btn px-3.5 py-2 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-400/25 border border-amber-500/50 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:hover:from-amber-400 disabled:hover:to-amber-500 text-slate-950 cursor-pointer disabled:cursor-not-allowed whitespace-nowrap shrink-0"
               title="Add word to repeater playlist (Pronounce 2x + Translation 1x)"
             >
               {addedSuccess ? (
                 <>
-                  <Check className={`w-3.5 h-3.5 stroke-[3] ${isLight ? 'text-white' : 'text-slate-950'}`} />
+                  <Check className="w-3.5 h-3.5 stroke-[3] text-slate-950" />
                   <span>Added to Playlist!</span>
                 </>
               ) : (
                 <>
-                  <Plus className={`w-3.5 h-3.5 stroke-[3] ${isLight ? 'text-white' : 'text-slate-950'}`} />
+                  <Plus className="w-3.5 h-3.5 stroke-[3] text-slate-950" />
                   <span>Add to Vocabulary (2x Loop)</span>
                 </>
               )}
