@@ -82,8 +82,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span
-                  className={`text-sm sm:text-base font-bold tracking-tight font-sans whitespace-nowrap truncate ${
+                <h1
+                  className={`text-sm sm:text-base font-bold tracking-tight font-sans whitespace-nowrap truncate inline-block m-0 p-0 ${
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}
                 >
@@ -99,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       &amp; Convert to MP3
                     </span>
                   </span>
-                </span>
+                </h1>
                 <span
                   className={`hidden sm:flex text-xs items-center gap-1 px-1.5 py-0.5 rounded-md border shrink-0 ${
                     isLight
