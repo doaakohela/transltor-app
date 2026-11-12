@@ -719,27 +719,28 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           <div className="relative flex-1">
             <textarea
               value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSourceText(val);
+                if (!val.trim()) {
+                  setTranslatedText('');
+                  setIsTranslating(false);
+                  lastTranslatedKeyRef.current = '';
+                }
+              }}
               placeholder="Enter text or word to translate & pronounce..."
               rows={4}
-              className={`w-full bg-transparent border-0 text-lg sm:text-xl focus:outline-none resize-none leading-relaxed ${
+              style={{
+                outline: 'none',
+                boxShadow: 'none',
+                border: 'none',
+              }}
+              className={`google-translate-textarea w-full bg-transparent border-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 shadow-none text-lg sm:text-xl resize-none leading-relaxed ${
                 isLight
                   ? 'text-slate-900 placeholder:text-slate-400 font-medium'
                   : 'text-white placeholder-slate-600'
               }`}
             />
-            {sourceText && (
-              <button
-                type="button"
-                onClick={() => setSourceText('')}
-                className={`absolute right-0 top-0 p-1 rounded-lg transition-colors cursor-pointer ${
-                  isLight ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white' : 'text-slate-500 hover:text-white'
-                }`}
-                title="Clear text"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {/* Source Action Bar */}

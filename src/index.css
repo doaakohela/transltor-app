@@ -221,8 +221,8 @@
   color: #202124 !important;
 }
 
-/* Form inputs & Textareas */
-.light-theme textarea,
+/* Form inputs & Textareas (excluding borderless Google Translate textarea) */
+.light-theme textarea:not(.google-translate-textarea),
 .light-theme input[type="text"],
 .light-theme input[type="search"],
 .light-theme input[type="number"],
@@ -232,12 +232,25 @@
   border-color: #dadce0 !important;
 }
 
-.light-theme textarea:focus,
+.light-theme textarea:not(.google-translate-textarea):focus,
 .light-theme input[type="text"]:focus,
 .light-theme input[type="search"]:focus,
 .light-theme select:focus {
   border-color: #1a73e8 !important;
   box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.18) !important;
+}
+
+/* Google Translate borderless textarea: ZERO border, ZERO outline, ZERO box-shadow in all states */
+.google-translate-textarea,
+.google-translate-textarea:focus,
+.google-translate-textarea:focus-visible,
+.light-theme .google-translate-textarea,
+.light-theme .google-translate-textarea:focus,
+.light-theme .google-translate-textarea:focus-visible {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
 }
 
 .light-theme textarea::placeholder,
