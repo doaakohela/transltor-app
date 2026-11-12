@@ -98,6 +98,87 @@ export default function App() {
     }
   }, [currentView]);
 
+  // Dynamic SEO metadata synchronization (Title, Description, Canonical URL, OpenGraph)
+  useEffect(() => {
+    try {
+      const pageMeta: Record<AppView, { title: string; desc: string; path: string }> = {
+        player: {
+          title: 'Translate Words, Texts & Convert to MP3 | Free Neural Audio Translator',
+          desc: 'Translate words and texts across 140+ world languages with natural voice pronunciation and free downloadable MP3 audio with dual repetition memorization.',
+          path: '',
+        },
+        words: {
+          title: 'Discovered Vocabulary Table | Translate Words, Texts & Convert to MP3',
+          desc: 'View, filter, search, and manage your custom vocabulary list with instant pronunciation and master MP3 downloads.',
+          path: '',
+        },
+        flashcards: {
+          title: 'Flashcards Deck (1 Word Focus) | Auditory Vocabulary Memorization',
+          desc: 'Interactive 3D flashcards with dual-repetition speech loops to memorize foreign language vocabulary effortlessly.',
+          path: 'flashcards',
+        },
+        studio: {
+          title: 'Voice Studio & Audio Settings | Neural Speech Generator',
+          desc: 'Customize studio voices, speech speed, repetition rules, and silent pause intervals across 140+ world languages.',
+          path: 'studio',
+        },
+        about: {
+          title: 'About Us | Translate Words, Texts & Convert to MP3 (transltor.xyz)',
+          desc: 'Learn about transltor.xyz, the free global translation workstation and neural speech audio generator for learners and polyglots worldwide.',
+          path: 'about',
+        },
+        contact: {
+          title: 'Contact Us & Support | Translate Words, Texts & Convert to MP3',
+          desc: 'Get in touch with the transltor.xyz team for feedback, support inquiries, and partnership requests.',
+          path: 'contact',
+        },
+        privacy: {
+          title: 'Privacy Policy | Translate Words, Texts & Convert to MP3',
+          desc: 'Privacy Policy for transltor.xyz explaining how your data is handled with zero tracking of personal vocabulary lists.',
+          path: 'privacy',
+        },
+        terms: {
+          title: 'Terms of Service | Translate Words, Texts & Convert to MP3',
+          desc: 'Terms of service and usage policies for the transltor.xyz translation and audio workstation.',
+          path: 'terms',
+        },
+        cookies: {
+          title: 'Cookie Policy | Translate Words, Texts & Convert to MP3',
+          desc: 'Cookie policy and consent preferences for transltor.xyz adhering to GDPR and CCPA standards.',
+          path: 'cookies',
+        },
+      };
+
+      const meta = pageMeta[currentView] || pageMeta.player;
+      const canonicalUrl = meta.path ? `https://www.transltor.xyz/${meta.path}` : 'https://www.transltor.xyz/';
+
+      document.title = meta.title;
+
+      const descTag = document.querySelector('meta[name="description"]');
+      if (descTag) descTag.setAttribute('content', meta.desc);
+
+      const canonicalTag = document.querySelector('link[rel="canonical"]');
+      if (canonicalTag) canonicalTag.setAttribute('href', canonicalUrl);
+
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute('content', meta.title);
+
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute('content', meta.desc);
+
+      const ogUrl = document.querySelector('meta[property="og:url"]');
+      if (ogUrl) ogUrl.setAttribute('content', canonicalUrl);
+
+      const twTitle = document.querySelector('meta[name="twitter:title"]');
+      if (twTitle) twTitle.setAttribute('content', meta.title);
+
+      const twDesc = document.querySelector('meta[name="twitter:description"]');
+      if (twDesc) twDesc.setAttribute('content', meta.desc);
+    } catch {
+      // ignore
+    }
+  }, [currentView]);
+
   useEffect(() => {
     const handlePopState = () => {
       const path = (window.location.pathname || '').replace(/^\//, '').toLowerCase();
