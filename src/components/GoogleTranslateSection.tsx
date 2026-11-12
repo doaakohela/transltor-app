@@ -66,6 +66,8 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastTranslatedKeyRef = useRef<string>('');
 
   const currentSourceLang = isAutoDetect
     ? getLanguageByCode(detectedLangCode)
@@ -93,43 +95,59 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
 
   // Trigger translation with multi-tier engine (Direct Google Translate + Server Proxy)
   const translateText = async (text: string, srcCode: string, tgtCode: string) => {
-    if (!text.trim()) {
+    const clean = text.trim();
+    if (!clean) {
       setTranslatedText('');
+      setIsTranslating(false);
+      lastTranslatedKeyRef.current = '';
+      return;
+    }
+
+    const sl = isAutoDetect ? 'auto' : srcCode.split('-')[0];
+    const tl = tgtCode.split('-')[0];
+    const requestKey = `${clean}::${sl}::${tl}`;
+
+    // Skip if identical request is already completed
+    if (requestKey === lastTranslatedKeyRef.current && translatedText) {
       setIsTranslating(false);
       return;
     }
 
+    // Abort previous in-flight request to prevent race conditions
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsTranslating(true);
-    const clean = text.trim();
-    const sl = isAutoDetect ? 'auto' : srcCode.split('-')[0];
-    const tl = tgtCode.split('-')[0];
 
     // 1. Try Direct Google Translate (Native browser query - matches Google Translate 100%)
     try {
       const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(
         sl
       )}&tl=${encodeURIComponent(tl)}&dt=t&q=${encodeURIComponent(clean)}`;
-      const res = await fetch(gUrl);
+      const res = await fetch(gUrl, { signal: controller.signal });
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data[0])) {
           const directTranslation = data[0].map((item: any) => item[0]).join('');
           if (directTranslation) {
             setTranslatedText(directTranslation);
+            lastTranslatedKeyRef.current = requestKey;
             if (data[2] && isAutoDetect) {
               const matchedLang = getLanguageByCode(data[2]);
-              setDetectedLangCode(matchedLang.code);
-              onUpdateSettings({
-                sourceLang: matchedLang.code,
-                sourceVoice: matchedLang.defaultVoice,
-              });
+              if (matchedLang.code !== detectedLangCode) {
+                setDetectedLangCode(matchedLang.code);
+              }
             }
             setIsTranslating(false);
             return;
           }
         }
       }
-    } catch (directErr) {
+    } catch (directErr: any) {
+      if (directErr?.name === 'AbortError') return;
       // Fallback to server route
     }
 
@@ -144,53 +162,55 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           sourceLang: isAutoDetect ? 'auto' : srcCode,
           targetLang: tgtCode,
         }),
+        signal: controller.signal,
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.translatedText) {
           setTranslatedText(data.translatedText);
+          lastTranslatedKeyRef.current = requestKey;
         }
         if (data.detectedLang && isAutoDetect) {
           const matchedLang = getLanguageByCode(data.detectedLang);
-          setDetectedLangCode(matchedLang.code);
-          onUpdateSettings({
-            sourceLang: matchedLang.code,
-            sourceVoice: matchedLang.defaultVoice,
-          });
+          if (matchedLang.code !== detectedLangCode) {
+            setDetectedLangCode(matchedLang.code);
+          }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return;
       console.warn('Translation proxy failed:', err);
     } finally {
       setIsTranslating(false);
     }
   };
 
-  // Debounced translation on source text change
+  // Debounced translation on source text change (WITHOUT circular onUpdateSettings feedback loops)
   useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    if (!sourceText.trim()) {
+    const clean = sourceText.trim();
+    if (!clean) {
       setTranslatedText('');
+      setIsTranslating(false);
+      lastTranslatedKeyRef.current = '';
       return;
     }
 
-    // Quick local script detection
+    // Quick local script detection (updates local state without mutating parent settings on every keystroke)
     if (isAutoDetect) {
       const detected = detectLanguageFromText(sourceText);
-      setDetectedLangCode(detected.code);
-      onUpdateSettings({
-        sourceLang: detected.code,
-        sourceVoice: detected.defaultVoice,
-      });
+      if (detected.code !== detectedLangCode) {
+        setDetectedLangCode(detected.code);
+      }
     }
 
     debounceTimerRef.current = setTimeout(() => {
       translateText(sourceText, settings.sourceLang || 'en-US', settings.targetLang || 'es-ES');
-    }, 350);
+    }, 300);
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -766,29 +786,45 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           }`}
         >
           <div className="relative flex-1">
-            {isTranslating ? (
+            <div
+              className={`text-lg sm:text-xl leading-relaxed transition-opacity duration-150 ${
+                translatedText
+                  ? isLight
+                    ? 'text-slate-900 font-semibold'
+                    : 'text-amber-200 font-medium'
+                  : isLight
+                  ? 'text-slate-400'
+                  : 'text-slate-600'
+              }`}
+              dir={currentTargetLang.script === 'arabic' ? 'rtl' : 'ltr'}
+            >
+              {translatedText ? (
+                translatedText
+              ) : isTranslating ? (
+                <div
+                  className={`flex items-center gap-2 text-sm py-4 ${
+                    isLight ? 'text-slate-700' : 'text-slate-400'
+                  }`}
+                >
+                  <Loader2 className={`w-4 h-4 animate-spin ${isLight ? 'text-[#1a73e8]' : 'text-amber-500'}`} />
+                  <span>Translating with AI...</span>
+                </div>
+              ) : (
+                'Translation will appear here instantly...'
+              )}
+            </div>
+
+            {/* Discreet top-right updating badge when updating an existing translation */}
+            {isTranslating && translatedText && (
               <div
-                className={`flex items-center gap-2 text-sm py-4 ${
-                  isLight ? 'text-slate-700' : 'text-slate-400'
+                className={`absolute top-0 right-0 flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md ${
+                  isLight
+                    ? 'bg-blue-50 text-[#1a73e8] border border-blue-200'
+                    : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
                 }`}
               >
-                <Loader2 className={`w-4 h-4 animate-spin ${isLight ? 'text-[#1a73e8]' : 'text-amber-500'}`} />
-                <span>Translating with AI...</span>
-              </div>
-            ) : (
-              <div
-                className={`text-lg sm:text-xl leading-relaxed ${
-                  translatedText
-                    ? isLight
-                      ? 'text-slate-900 font-semibold'
-                      : 'text-amber-200 font-medium'
-                    : isLight
-                    ? 'text-slate-400'
-                    : 'text-slate-600'
-                }`}
-                dir={currentTargetLang.script === 'arabic' ? 'rtl' : 'ltr'}
-              >
-                {translatedText || 'Translation will appear here instantly...'}
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Updating...</span>
               </div>
             )}
           </div>
