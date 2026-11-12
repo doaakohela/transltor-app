@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   X,
   UploadCloud,
+  Upload,
   CheckCircle2,
   AlertCircle,
   FileText,
@@ -15,6 +16,7 @@ interface BulkImportModalProps {
   onImport: (items: Omit<VocabularyItem, 'id' | 'createdAt'>[], replaceExisting: boolean) => void;
   sourceLangName?: string;
   targetLangName?: string;
+  theme?: 'dark' | 'light';
 }
 
 const DEFAULT_SAMPLE_TEXT = `depression\tdeep sadness and despondency
@@ -90,11 +92,67 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
   onImport,
   sourceLangName = 'Source',
   targetLangName = 'Target',
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   const [text, setText] = useState('');
   const [replaceExisting, setReplaceExisting] = useState(false);
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!isOpen) return null;
+
+  // Handle file upload from Mobile, Tablet, or Desktop device (.txt, .csv, .tsv, .json)
+  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = evt.target?.result as string;
+      if (typeof content === 'string') {
+        if (file.name.toLowerCase().endsWith('.json')) {
+          try {
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed)) {
+              const textLines = parsed
+                .map((item: any) => {
+                  if (typeof item === 'string') return item;
+                  const src =
+                    item.source ||
+                    item.sourceText ||
+                    item.english ||
+                    item.word ||
+                    item.term ||
+                    '';
+                  const tgt =
+                    item.target ||
+                    item.targetText ||
+                    item.arabic ||
+                    item.translation ||
+                    item.meaning ||
+                    '';
+                  return `${src}\t${tgt}`.trim();
+                })
+                .filter(Boolean)
+                .join('\n');
+              if (textLines) {
+                setText(textLines);
+                setAttachedFileName(file.name);
+                return;
+              }
+            }
+          } catch (jsonErr) {
+            console.warn('JSON parse error, falling back to raw text:', jsonErr);
+          }
+        }
+        setText(content);
+        setAttachedFileName(file.name);
+      }
+    };
+    reader.readAsText(file);
+    if (e.target) e.target.value = '';
+  };
 
   // Parse lines
   const parseLines = () => {
@@ -126,91 +184,194 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
 
     onImport(itemsToImport, replaceExisting);
     setText('');
+    setAttachedFileName(null);
     onClose();
   };
 
   const loadSample = () => {
     setText(DEFAULT_SAMPLE_TEXT);
+    setAttachedFileName(null);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in text-left">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-3xl p-6 shadow-2xl relative">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in text-left"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`border w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-4 sm:p-6 shadow-2xl relative ${
+          isLight
+            ? 'bg-white border-slate-200 text-slate-900'
+            : 'bg-slate-900 border-slate-700 text-white'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-indigo-600/20 text-indigo-400 rounded-xl">
+        <div
+          className={`flex items-center justify-between pb-3 sm:pb-4 border-b gap-2 ${
+            isLight ? 'border-slate-200' : 'border-slate-800'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`p-2 sm:p-2.5 rounded-xl shrink-0 ${
+                isLight ? 'bg-[#1a73e8] text-white' : 'bg-indigo-600/20 text-indigo-400'
+              }`}
+            >
               <UploadCloud className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-white">
+            <div className="min-w-0">
+              <h3 className={`text-sm sm:text-base font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 Bulk Vocabulary Import (Up to 10,000 Words)
               </h3>
-              <p className="text-xs text-slate-400">
-                Supports Tab-delimited, comma-separated, dash, or space-separated formats
+              <p className={`text-xs truncate ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                Upload a file or paste Tab, comma, dash, or space-separated lists
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+              isLight
+                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
+        {/* Hidden Device File Picker Input (Supports Mobile, Tablet, Desktop) */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileAttach}
+          accept=".txt,.csv,.tsv,.json,.text,text/plain,text/csv,application/json"
+          className="hidden"
+        />
+
         {/* Content */}
-        <div className="mt-4 space-y-4">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <button
-              onClick={loadSample}
-              className="text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Fill with sample demo lines</span>
-            </button>
-            <span className="text-[11px] text-slate-400">
+        <div className="mt-4 space-y-3.5 sm:space-y-4">
+          {/* Device File Attachment Box + Quick Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="keep-amber-btn px-3.5 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md shadow-amber-400/20 border border-amber-500/50 transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Choose TXT, CSV, TSV, or JSON file from your phone, tablet, or computer"
+              >
+                <Upload className="w-3.5 h-3.5 stroke-[2.5] text-slate-950" />
+                <span>Attach File from Device (TXT / CSV / JSON)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={loadSample}
+                className={`px-3 py-2 rounded-xl font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors border ${
+                  isLight
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Demo Sample</span>
+              </button>
+            </div>
+
+            <span className={`text-[11px] font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               {sourceLangName} ➔ {targetLangName}
             </span>
           </div>
 
+          {/* Attached File Pill */}
+          {attachedFileName && (
+            <div
+              className={`px-3 py-2 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                isLight
+                  ? 'bg-[#e8f0fe] border-[#aecbfa] text-[#1967d2]'
+                  : 'bg-indigo-950/60 border-indigo-700/60 text-indigo-200'
+              }`}
+            >
+              <span className="flex items-center gap-1.5 truncate font-medium">
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Attached: {attachedFileName}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setAttachedFileName(null);
+                  setText('');
+                }}
+                className="text-[11px] font-bold hover:underline shrink-0 cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={`Paste words here (one per line):\ndepression\tdeep sadness\nperseverance\tcontinued effort\nopportunity, favorable circumstances`}
-            rows={9}
-            className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-600 font-mono outline-none transition-colors"
+            onChange={(e) => {
+              setText(e.target.value);
+              if (!e.target.value) setAttachedFileName(null);
+            }}
+            placeholder={`Attach a file above or paste words here (one per line):\ndepression\tdeep sadness\nperseverance\tcontinued effort\nopportunity, favorable circumstances`}
+            rows={8}
+            className={`w-full border rounded-xl p-3.5 text-sm font-mono outline-none transition-colors ${
+              isLight
+                ? 'bg-slate-50 border-slate-300 focus:border-[#1a73e8] text-slate-900 placeholder:text-slate-500'
+                : 'bg-slate-950 border-slate-700 focus:border-amber-500 text-slate-100 placeholder-slate-600'
+            }`}
           />
 
           {/* Validation & Preview banner */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div
+            className={`border rounded-xl p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 text-xs ${
+              isLight
+                ? 'bg-slate-50 border-slate-200 text-slate-700'
+                : 'bg-slate-950/80 border-slate-800 text-slate-400'
+            }`}
+          >
             <div className="flex items-center gap-2">
               {parsedItems.length > 0 ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="text-emerald-300 font-medium">
-                    Recognized <strong className="font-mono text-white text-sm">{parsedItems.length}</strong> valid words
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span className={`font-medium ${isLight ? 'text-emerald-700' : 'text-emerald-300'}`}>
+                    Recognized <strong className={`font-mono text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>{parsedItems.length}</strong> valid words
                   </span>
                 </>
               ) : (
                 <>
-                  <AlertCircle className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span className="text-slate-400">Paste or type your word list to validate</span>
+                  <AlertCircle className={`w-4 h-4 shrink-0 ${isLight ? 'text-slate-500' : 'text-slate-500'}`} />
+                  <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>
+                    Attach a file or paste your word list to validate
+                  </span>
                 </>
               )}
             </div>
 
             {parsedItems.length > 0 && (
-              <span className="text-slate-400 text-[11px] bg-slate-900 px-2.5 py-1 rounded-md border border-slate-800">
-                1st item: <strong className="text-white">{parsedItems[0].sourceText}</strong> ➔{' '}
-                <span className="text-amber-300">{parsedItems[0].targetText || 'No translation'}</span>
+              <span
+                className={`text-[11px] px-2.5 py-1 rounded-md border truncate max-w-full ${
+                  isLight
+                    ? 'bg-white border-slate-200 text-slate-700'
+                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`}
+              >
+                1st item: <strong className={isLight ? 'text-slate-900' : 'text-white'}>{parsedItems[0].sourceText}</strong> ➔{' '}
+                <span className={isLight ? 'text-[#1967d2] font-semibold' : 'text-amber-300'}>
+                  {parsedItems[0].targetText || 'No translation'}
+                </span>
               </span>
             )}
           </div>
 
           {/* Options */}
-          <div className="flex items-center justify-between pt-1 text-xs">
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+            <label className={`flex items-center gap-2 cursor-pointer ${isLight ? 'text-slate-700 font-medium' : 'text-slate-300'}`}>
               <input
                 type="checkbox"
                 checked={replaceExisting}
@@ -225,19 +386,29 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+          <div
+            className={`flex items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t ${
+              isLight ? 'border-slate-200' : 'border-slate-800'
+            }`}
+          >
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-colors cursor-pointer ${
+                isLight
+                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white'
+                  : 'text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700'
+              }`}
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleImport}
               disabled={parsedItems.length === 0}
-              className="keep-amber-btn px-5 py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-amber-400/20 flex items-center gap-1.5 cursor-pointer"
+              className="keep-amber-btn px-5 py-2.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:hover:from-amber-400 disabled:hover:to-amber-500 disabled:cursor-not-allowed rounded-xl transition-all shadow-md shadow-amber-400/20 border border-amber-500/50 flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-slate-950" />
               <span>Import {parsedItems.length} Words</span>
             </button>
           </div>

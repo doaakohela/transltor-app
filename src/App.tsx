@@ -754,6 +754,7 @@ export default function App() {
         onImport={handleBulkImport}
         sourceLangName={sourceLang.name}
         targetLangName={targetLang.name}
+        theme={theme}
       />
 
       {/* Professional AdSense-Compliant Multi-Column Footer */}
