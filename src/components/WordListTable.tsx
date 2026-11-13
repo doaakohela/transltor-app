@@ -367,6 +367,10 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                             type="text"
                             value={editSource}
                             onChange={(e) => setEditSource(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(item.id);
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
                             className={`border rounded-lg px-2.5 py-1 text-sm w-full outline-none ${
                               isLight
                                 ? 'bg-white border-[#1a73e8] text-slate-900'
@@ -400,6 +404,10 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                             type="text"
                             value={editTarget}
                             onChange={(e) => setEditTarget(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(item.id);
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
                             className={`border rounded-lg px-2.5 py-1 text-sm w-full outline-none ${
                               isLight
                                 ? 'bg-white border-[#1a73e8] text-slate-900'

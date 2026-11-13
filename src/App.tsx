@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { speechService, sleep } from './services/speechService.ts';
 import { AudioSettings, PlaybackStage, VocabularyItem, AppView } from './types.ts';
-import { SUPPORTED_LANGUAGES, getLanguageByCode } from './data/languages.ts';
+import { SUPPORTED_LANGUAGES, getLanguageByCode, detectLanguageFromText } from './data/languages.ts';
 import { Navbar } from './components/Navbar.tsx';
 import { GoogleTranslateSection } from './components/GoogleTranslateSection.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
@@ -482,21 +482,201 @@ export default function App() {
     );
   };
 
-  // Update item
-  const handleUpdateItem = (id: string, sourceText: string, targetText: string) => {
+  const resolveLanguageAndVoiceForBase = (
+    detectedLangCode: string,
+    previousLangCode: string,
+    previousVoice?: string
+  ) => {
+    const prevLangObj = getLanguageByCode(previousLangCode);
+    const detectedObj = getLanguageByCode(detectedLangCode);
+    const prevBase = prevLangObj.code.split('-')[0].split('_')[0].toLowerCase();
+    const detectedBase = detectedObj.code.split('-')[0].split('_')[0].toLowerCase();
+
+    if (detectedBase === prevBase) {
+      const validPrevVoice =
+        previousVoice && prevLangObj.voices.some((v) => v.id === previousVoice)
+          ? previousVoice
+          : prevLangObj.defaultVoice;
+      return { lang: prevLangObj.code, voice: validPrevVoice };
+    }
+
+    const cur = settingsRef.current;
+    const curSrcBase = (cur.sourceLang || '').split('-')[0].split('_')[0].toLowerCase();
+    const curTgtBase = (cur.targetLang || '').split('-')[0].split('_')[0].toLowerCase();
+
+    if (curSrcBase === detectedBase) {
+      const srcObj = getLanguageByCode(cur.sourceLang);
+      const validVoice = srcObj.voices.some((v) => v.id === cur.sourceVoice)
+        ? (cur.sourceVoice as string)
+        : srcObj.defaultVoice;
+      return { lang: srcObj.code, voice: validVoice };
+    }
+
+    if (curTgtBase === detectedBase) {
+      const tgtObj = getLanguageByCode(cur.targetLang);
+      const validVoice = tgtObj.voices.some((v) => v.id === cur.targetVoice)
+        ? (cur.targetVoice as string)
+        : tgtObj.defaultVoice;
+      return { lang: tgtObj.code, voice: validVoice };
+    }
+
+    return { lang: detectedObj.code, voice: detectedObj.defaultVoice };
+  };
+
+  const detectEditedFieldLanguage = async (
+    text: string,
+    previousLangCode: string,
+    previousVoice?: string
+  ) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      const prevObj = getLanguageByCode(previousLangCode);
+      return { lang: prevObj.code, voice: previousVoice || prevObj.defaultVoice };
+    }
+
+    // Check backend Google auto-detection so same-script languages (e.g. French <-> English) are detected accurately
+    try {
+      const baseUrl = speechService.getBaseUrl();
+      const res = await fetch(`${baseUrl}/api/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: trimmed,
+          sourceLang: 'auto',
+          targetLang: 'en',
+        }),
+        signal: AbortSignal.timeout(2500),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.detectedLang && typeof data.detectedLang === 'string') {
+          return resolveLanguageAndVoiceForBase(
+            data.detectedLang,
+            previousLangCode,
+            previousVoice
+          );
+        }
+      }
+    } catch {
+      // Fall back to script-level detector below
+    }
+
+    const scriptDetected = detectLanguageFromText(trimmed);
+    return resolveLanguageAndVoiceForBase(
+      scriptDetected.code,
+      previousLangCode,
+      previousVoice
+    );
+  };
+
+  // Update item: automatically updates language/voice, invalidates old audio, and pronounces the updated text
+  const handleUpdateItem = async (id: string, sourceText: string, targetText: string) => {
+    const cleanSource = sourceText.trim();
+    const cleanTarget = targetText.trim();
+    const existingIdx = itemsRef.current.findIndex((it) => it.id === id);
+    const existingItem = existingIdx >= 0 ? itemsRef.current[existingIdx] : undefined;
+
+    if (!existingItem) return;
+
+    const oldSource = (existingItem.sourceText || existingItem.english || '').trim();
+    const oldTarget = (existingItem.targetText || existingItem.arabic || '').trim();
+    const sourceChanged = cleanSource !== oldSource;
+    const targetChanged = cleanTarget !== oldTarget;
+
+    if (!sourceChanged && !targetChanged) return;
+
+    const curSettings = settingsRef.current;
+    const prevSourceLang = existingItem.sourceLang || curSettings.sourceLang || 'en-US';
+    const prevTargetLang = existingItem.targetLang || curSettings.targetLang || 'es-ES';
+    const prevSourceVoice = existingItem.sourceVoice || curSettings.sourceVoice;
+    const prevTargetVoice = existingItem.targetVoice || curSettings.targetVoice;
+
+    // Unlock audio synchronously inside click/Enter gesture and stop any stale audio for this item
+    const wasContinuousPlaying = isPlayingRef.current;
+    speechService.invalidateItemCache(existingItem, curSettings);
+    speechService.unlockAudio();
+    playbackSessionRef.current += 1;
+    isPlayingRef.current = false;
+    speechService.stop();
+    setIsPlaying(false);
+    setPlaybackStage('idle');
+
+    // Immediate script-level adjustment for instant UI feedback while async detection completes
+    let immediateSrcLang = prevSourceLang;
+    let immediateSrcVoice = prevSourceVoice;
+    if (sourceChanged && cleanSource) {
+      const quickSrc = detectLanguageFromText(cleanSource);
+      if (quickSrc.script !== getLanguageByCode(prevSourceLang).script) {
+        const resolved = resolveLanguageAndVoiceForBase(quickSrc.code, prevSourceLang, prevSourceVoice);
+        immediateSrcLang = resolved.lang;
+        immediateSrcVoice = resolved.voice;
+      }
+    }
+
+    let immediateTgtLang = prevTargetLang;
+    let immediateTgtVoice = prevTargetVoice;
+    if (targetChanged && cleanTarget) {
+      const quickTgt = detectLanguageFromText(cleanTarget);
+      if (quickTgt.script !== getLanguageByCode(prevTargetLang).script) {
+        const resolved = resolveLanguageAndVoiceForBase(quickTgt.code, prevTargetLang, prevTargetVoice);
+        immediateTgtLang = resolved.lang;
+        immediateTgtVoice = resolved.voice;
+      }
+    }
+
     setItems((prev) =>
       prev.map((it) =>
         it.id === id
           ? {
               ...it,
-              sourceText,
-              targetText,
-              english: sourceText,
-              arabic: targetText,
+              sourceText: cleanSource,
+              targetText: cleanTarget,
+              english: cleanSource,
+              arabic: cleanTarget,
+              sourceLang: immediateSrcLang,
+              targetLang: immediateTgtLang,
+              sourceVoice: immediateSrcVoice,
+              targetVoice: immediateTgtVoice,
             }
           : it
       )
     );
+
+    // Accurate multi-language detection (handles Latin languages like French -> English too)
+    const [finalSrc, finalTgt] = await Promise.all([
+      sourceChanged && cleanSource
+        ? detectEditedFieldLanguage(cleanSource, prevSourceLang, prevSourceVoice)
+        : Promise.resolve({ lang: immediateSrcLang, voice: immediateSrcVoice }),
+      targetChanged && cleanTarget
+        ? detectEditedFieldLanguage(cleanTarget, prevTargetLang, prevTargetVoice)
+        : Promise.resolve({ lang: immediateTgtLang, voice: immediateTgtVoice }),
+    ]);
+
+    const updatedItem: VocabularyItem = {
+      ...existingItem,
+      sourceText: cleanSource,
+      targetText: cleanTarget,
+      english: cleanSource,
+      arabic: cleanTarget,
+      sourceLang: finalSrc.lang,
+      targetLang: finalTgt.lang,
+      sourceVoice: finalSrc.voice,
+      targetVoice: finalTgt.voice,
+    };
+
+    const nextItems = itemsRef.current.map((it) => (it.id === id ? updatedItem : it));
+    itemsRef.current = nextItems;
+    setItems(nextItems);
+
+    // Automatically pronounce the newly edited text with its updated voice/language
+    if (existingIdx !== -1) {
+      setCurrentIndex(existingIdx);
+      if (wasContinuousPlaying) {
+        startListPlayback(existingIdx);
+      } else {
+        await speechService.playFullSequence(updatedItem, settingsRef.current);
+      }
+    }
   };
 
   // Sequential full-list playback loop (Desktop, Tablet & Mobile)

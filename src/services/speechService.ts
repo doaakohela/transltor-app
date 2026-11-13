@@ -340,6 +340,12 @@ class SpeechService {
     });
   }
 
+  public invalidateItemCache(item: VocabularyItem | undefined, settings: AudioSettings): void {
+    if (!item) return;
+    const cacheKey = this.getSequenceCacheKey(item, settings);
+    this.sequenceCache.delete(cacheKey);
+  }
+
   // Play full sequence (e.g. 2x Source Word + Pause + 1x Target Translation)
   public async playFullSequence(
     item: VocabularyItem,
