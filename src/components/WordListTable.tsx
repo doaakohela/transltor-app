@@ -324,10 +324,10 @@ export const WordListTable: React.FC<WordListTableProps> = ({
               >
                 <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold">#</th>
                 <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold">
-                  {sourceLang.flag} Word ({sourceLang.name})
+                  Original Word
                 </th>
                 <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold">
-                  {targetLang.flag} Translation ({targetLang.name})
+                  Translation
                 </th>
                 <th className="hidden md:table-cell py-3 px-4 font-semibold text-center">Status</th>
                 <th className="py-2.5 px-2 md:py-3 md:px-4 font-semibold text-right">Actions</th>
@@ -374,18 +374,16 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                             }`}
                           />
                         ) : (
-                          <div>
-                            <div className="flex items-start gap-1.5">
-                              <span
-                                title={`${itemSourceLang.name} (${item.sourceVoice || itemSourceLang.defaultVoice})`}
-                                className="text-xs sm:text-sm shrink-0 mt-0.5 select-none"
-                              >
-                                {itemSourceLang.flag}
-                              </span>
-                              <span className={`font-semibold text-sm md:text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                                {srcWord}
-                              </span>
-                            </div>
+                          <div className="flex flex-col items-start gap-1">
+                            <span
+                              title={`${itemSourceLang.name} (${item.sourceVoice || itemSourceLang.defaultVoice})`}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-[#ffffff] text-[10px] sm:text-[11px] font-bold tracking-wide leading-tight shadow-xs select-none"
+                            >
+                              {itemSourceLang.name}
+                            </span>
+                            <span className={`font-semibold text-sm md:text-base leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                              {srcWord}
+                            </span>
                             {item.phonetic && (
                               <span className="block text-[11px] text-slate-500 font-mono">
                                 {item.phonetic}
@@ -409,14 +407,14 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                             }`}
                           />
                         ) : (
-                          <div className="flex items-start gap-1.5">
+                          <div className="flex flex-col items-start gap-1">
                             <span
                               title={`${itemTargetLang.name} (${item.targetVoice || itemTargetLang.defaultVoice})`}
-                              className="text-xs sm:text-sm shrink-0 mt-0.5 select-none"
+                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-[#ffffff] text-[10px] sm:text-[11px] font-bold tracking-wide leading-tight shadow-xs select-none"
                             >
-                              {itemTargetLang.flag}
+                              {itemTargetLang.name}
                             </span>
-                            <span className={`font-medium text-xs sm:text-sm ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
+                            <span className={`font-medium text-xs sm:text-sm leading-snug ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
                               {tgtWord || 'No translation provided'}
                             </span>
                           </div>
