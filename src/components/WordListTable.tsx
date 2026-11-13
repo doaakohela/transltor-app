@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Volume2,
@@ -10,6 +10,8 @@ import {
   Loader2,
   FolderDown,
   Repeat,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { AudioSettings, VocabularyItem } from '../types.ts';
 import { speechService } from '../services/speechService.ts';
@@ -39,6 +41,8 @@ export const WordListTable: React.FC<WordListTableProps> = ({
   const isLight = theme === 'light';
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'learning' | 'mastered'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [batchSuccess, setBatchSuccess] = useState(false);
@@ -56,19 +60,51 @@ export const WordListTable: React.FC<WordListTableProps> = ({
     }
   };
 
-  // Filter items
-  const filteredItems = items.filter((item) => {
-    const src = item.sourceText || item.english || '';
-    const tgt = item.targetText || item.arabic || '';
-    const matchesSearch =
-      src.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tgt.toLowerCase().includes(searchQuery.toLowerCase());
+  // Memoized counts so 9,000+ items never double-iterate on every render
+  const { learningCount, masteredCount } = useMemo(() => {
+    let learning = 0;
+    let mastered = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].mastered) mastered++;
+      else learning++;
+    }
+    return { learningCount: learning, masteredCount: mastered };
+  }, [items]);
 
-    if (!matchesSearch) return false;
-    if (filterType === 'learning') return !item.mastered;
-    if (filterType === 'mastered') return item.mastered;
-    return true;
-  });
+  // Filter items (memoized for 10,000+ words)
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q && filterType === 'all') return items;
+    return items.filter((item) => {
+      if (filterType === 'learning' && item.mastered) return false;
+      if (filterType === 'mastered' && !item.mastered) return false;
+      if (!q) return true;
+      const src = item.sourceText || item.english || '';
+      const tgt = item.targetText || item.arabic || '';
+      return src.toLowerCase().includes(q) || tgt.toLowerCase().includes(q);
+    });
+  }, [items, searchQuery, filterType]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+
+  const paginatedItems = useMemo(
+    () => filteredItems.slice(startIdx, startIdx + pageSize),
+    [filteredItems, startIdx, pageSize]
+  );
+
+  // Reset to page 1 when filter or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, pageSize]);
+
+  // Clamp page if items are deleted
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Export list as text file (word, translation)
   const handleExportText = () => {
@@ -217,8 +253,8 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
-              <span className="sm:hidden">Learn ({items.filter((i) => !i.mastered).length})</span>
-              <span className="hidden sm:inline">Learning ({items.filter((i) => !i.mastered).length})</span>
+              <span className="sm:hidden">Learn ({learningCount})</span>
+              <span className="hidden sm:inline">Learning ({learningCount})</span>
             </button>
 
             <button
@@ -233,8 +269,8 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   : 'text-slate-400 hover:text-white border-transparent'
               }`}
             >
-              <span className="sm:hidden">Master ({items.filter((i) => i.mastered).length})</span>
-              <span className="hidden sm:inline">Mastered ({items.filter((i) => i.mastered).length})</span>
+              <span className="sm:hidden">Master ({masteredCount})</span>
+              <span className="hidden sm:inline">Mastered ({masteredCount})</span>
             </button>
           </div>
 
@@ -330,7 +366,8 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredItems.map((item, index) => {
+                paginatedItems.map((item, idx) => {
+                  const index = startIdx + idx;
                   const srcWord = item.sourceText || item.english || '';
                   const tgtWord = item.targetText || item.arabic || '';
                   const itemSourceLang = item.sourceLang ? getLanguageByCode(item.sourceLang) : sourceLang;
@@ -494,6 +531,71 @@ export const WordListTable: React.FC<WordListTableProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* High-Throughput Pagination Controls (Renders 50-250 rows cleanly on Mobile, Tablet & Desktop) */}
+        {filteredItems.length > 50 && (
+          <div
+            className={`border-t px-3 py-2.5 sm:px-4 sm:py-3 flex flex-wrap items-center justify-between gap-2 text-xs ${
+              isLight ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-slate-800 bg-slate-950/70 text-slate-300'
+            }`}
+          >
+            <div className="flex items-center gap-2 font-mono text-[11px] sm:text-xs">
+              <span>
+                Showing <strong>{startIdx + 1}</strong>–
+                <strong>{Math.min(startIdx + pageSize, filteredItems.length)}</strong> of{' '}
+                <strong>{filteredItems.length.toLocaleString()}</strong>
+              </span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                aria-label="Words per page"
+                className={`border rounded-lg px-2 py-1 text-[11px] outline-none cursor-pointer ${
+                  isLight
+                    ? 'bg-white border-slate-300 text-slate-900'
+                    : 'bg-slate-900 border-slate-700 text-slate-200'
+                }`}
+              >
+                <option value={50}>50 / page</option>
+                <option value={100}>100 / page</option>
+                <option value={250}>250 / page</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors ${
+                  isLight
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] disabled:hover:bg-[#1a73e8] text-white border-[#1a73e8]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                }`}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Prev</span>
+              </button>
+
+              <span className="px-2 font-mono text-[11px] sm:text-xs">
+                Page <strong>{safePage}</strong> / {totalPages}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors ${
+                  isLight
+                    ? 'bg-[#1a73e8] hover:bg-[#1557b0] disabled:hover:bg-[#1a73e8] text-white border-[#1a73e8]'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                }`}
+              >
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

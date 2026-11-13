@@ -27,7 +27,14 @@ import {
 } from 'lucide-react';
 import { speechService, sleep } from './services/speechService.ts';
 import { AudioSettings, PlaybackStage, VocabularyItem, AppView } from './types.ts';
-import { SUPPORTED_LANGUAGES, getLanguageByCode, detectLanguageFromText } from './data/languages.ts';
+import {
+  SUPPORTED_LANGUAGES,
+  getLanguageByCode,
+  detectLanguageFromText,
+  resolveSmartFieldLanguage,
+  detectBatchDominantLanguages,
+  hasExplicitLanguageLetters,
+} from './data/languages.ts';
 import { Navbar } from './components/Navbar.tsx';
 import { GoogleTranslateSection } from './components/GoogleTranslateSection.tsx';
 import { LanguageSelector } from './components/LanguageSelector.tsx';
@@ -46,6 +53,12 @@ import { ContactPage } from './pages/ContactPage.tsx';
 import { CookiePolicyPage } from './pages/CookiePolicyPage.tsx';
 import { INITIAL_VOCABULARY, PRESET_PACKS } from './data/presets.ts';
 import { SeoFaqSection } from './components/SeoFaqSection.tsx';
+import {
+  loadVocabularyListSync,
+  loadVocabularyListAsync,
+  saveVocabularyList,
+  clearVocabularyStorage,
+} from './utils/vocabStorage.ts';
 
 const DEFAULT_SETTINGS: AudioSettings = {
   sourceLang: 'en-US',
@@ -194,73 +207,122 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Load items from localStorage or defaults
-  const [items, setItems] = useState<VocabularyItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('vocabflow_words_list');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.filter((item: any) => {
-            const s = (item.sourceText || item.english || '').toLowerCase().trim();
-            const t = (item.targetText || item.arabic || '').trim();
-            return !(s === 'schedule' || t === 'جدول مواعيد' || t.includes('جدول مواعيد'));
-          });
-          return cleaned.map((item: any) => {
-            const srcText = item.sourceText || item.english || '';
-            const tgtText = item.targetText || item.arabic || '';
-            let fixedSourceLang = item.sourceLang;
-            let fixedSourceVoice = item.sourceVoice;
-            let fixedTargetLang = item.targetLang;
-            let fixedTargetVoice = item.targetVoice;
+  const normalizeLoadedItems = (parsed: any[]): VocabularyItem[] => {
+    const cleaned = parsed.filter((item: any) => {
+      if (!item) return false;
+      const s = (item.sourceText || item.english || '').toLowerCase().trim();
+      const t = (item.targetText || item.arabic || '').trim();
+      return Boolean(s) && !(s === 'schedule' || t === 'جدول مواعيد' || t.includes('جدول مواعيد'));
+    });
 
-            if (fixedSourceLang && srcText.trim()) {
-              const savedSrcObj = getLanguageByCode(fixedSourceLang);
-              const detectedSrc = detectLanguageFromText(srcText);
-              if (
-                (detectedSrc.script !== 'latin' && savedSrcObj.script !== detectedSrc.script) ||
-                (savedSrcObj.script !== 'latin' && detectedSrc.script === 'latin')
-              ) {
-                fixedSourceLang = detectedSrc.code;
-                fixedSourceVoice = detectedSrc.defaultVoice;
-              }
+    const isHugeList = cleaned.length > 25000;
+
+    return cleaned.map((item: any) => {
+      const srcText = item.sourceText || item.english || '';
+      const tgtText = item.targetText || item.arabic || '';
+      let fixedSourceLang = item.sourceLang;
+      let fixedSourceVoice = item.sourceVoice;
+      let fixedTargetLang = item.targetLang;
+      let fixedTargetVoice = item.targetVoice;
+
+      // Script & numeric-field mismatch self-healing using fast O(1) script check
+      if (!isHugeList) {
+        if (fixedSourceLang && srcText.trim()) {
+          const savedSrcObj = getLanguageByCode(fixedSourceLang);
+          if (hasExplicitLanguageLetters(srcText)) {
+            const detectedSrc = detectLanguageFromText(srcText);
+            if (
+              (detectedSrc.script !== 'latin' && savedSrcObj.script !== detectedSrc.script) ||
+              (savedSrcObj.script !== 'latin' && detectedSrc.script === 'latin')
+            ) {
+              fixedSourceLang = detectedSrc.code;
+              fixedSourceVoice = detectedSrc.defaultVoice;
             }
-
-            if (fixedTargetLang && tgtText.trim()) {
-              const savedTgtObj = getLanguageByCode(fixedTargetLang);
-              const detectedTgt = detectLanguageFromText(tgtText);
-              if (
-                (detectedTgt.script !== 'latin' && savedTgtObj.script !== detectedTgt.script) ||
-                (savedTgtObj.script !== 'latin' && detectedTgt.script === 'latin')
-              ) {
-                fixedTargetLang = detectedTgt.code;
-                fixedTargetVoice = detectedTgt.defaultVoice;
-              }
+          } else if (tgtText.trim() && hasExplicitLanguageLetters(tgtText)) {
+            const targetObj = fixedTargetLang
+              ? getLanguageByCode(fixedTargetLang)
+              : detectLanguageFromText(tgtText);
+            if (savedSrcObj.script !== targetObj.script) {
+              fixedSourceLang = targetObj.code;
+              fixedSourceVoice = targetObj.defaultVoice;
             }
+          }
+        }
 
-            return {
-              id: item.id || 'v-' + Math.random().toString(36).substring(2, 9),
-              sourceText: srcText,
-              targetText: tgtText,
-              english: srcText,
-              arabic: tgtText,
-              phonetic: item.phonetic,
-              category: item.category,
-              mastered: Boolean(item.mastered),
-              sourceLang: fixedSourceLang,
-              targetLang: fixedTargetLang,
-              sourceVoice: fixedSourceVoice,
-              targetVoice: fixedTargetVoice,
-              createdAt: item.createdAt || Date.now(),
-            };
-          });
+        if (fixedTargetLang && tgtText.trim()) {
+          const savedTgtObj = getLanguageByCode(fixedTargetLang);
+          if (hasExplicitLanguageLetters(tgtText)) {
+            const detectedTgt = detectLanguageFromText(tgtText);
+            if (
+              (detectedTgt.script !== 'latin' && savedTgtObj.script !== detectedTgt.script) ||
+              (savedTgtObj.script !== 'latin' && detectedTgt.script === 'latin')
+            ) {
+              fixedTargetLang = detectedTgt.code;
+              fixedTargetVoice = detectedTgt.defaultVoice;
+            }
+          } else if (srcText.trim() && hasExplicitLanguageLetters(srcText)) {
+            const sourceObj = fixedSourceLang
+              ? getLanguageByCode(fixedSourceLang)
+              : detectLanguageFromText(srcText);
+            if (savedTgtObj.script !== sourceObj.script) {
+              fixedTargetLang = sourceObj.code;
+              fixedTargetVoice = sourceObj.defaultVoice;
+            }
+          }
         }
       }
-    } catch (e) {
-      console.warn('Could not read saved words:', e);
+
+      return {
+        id: item.id || 'v-' + Math.random().toString(36).substring(2, 9),
+        sourceText: srcText,
+        targetText: tgtText,
+        english: srcText,
+        arabic: tgtText,
+        phonetic: item.phonetic,
+        category: item.category,
+        mastered: Boolean(item.mastered),
+        sourceLang: fixedSourceLang,
+        targetLang: fixedTargetLang,
+        sourceVoice: fixedSourceVoice,
+        targetVoice: fixedTargetVoice,
+        createdAt: item.createdAt || Date.now(),
+      };
+    });
+  };
+
+  // Track whether initial storage hydration (including IndexedDB for 9,000+ lists) has completed
+  const storageHydratedRef = useRef(false);
+
+  // Load items from localStorage synchronously if small, or hydrate asynchronously from IndexedDB
+  const [items, setItems] = useState<VocabularyItem[]>(() => {
+    const syncList = loadVocabularyListSync();
+    if (syncList && syncList.length > 0) {
+      storageHydratedRef.current = true;
+      return normalizeLoadedItems(syncList);
     }
     return [];
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    if (storageHydratedRef.current) return;
+
+    loadVocabularyListAsync()
+      .then((idbList) => {
+        if (cancelled) return;
+        storageHydratedRef.current = true;
+        if (idbList && idbList.length > 0) {
+          setItems(normalizeLoadedItems(idbList));
+        }
+      })
+      .catch(() => {
+        storageHydratedRef.current = true;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Settings state (always enforce autoAdvance: true so "Start Listening to List" advances through all words)
   const [settings, setSettings] = useState<AudioSettings>(() => {
@@ -316,6 +378,7 @@ export default function App() {
 
   // Modals and UI state
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
 
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
@@ -346,9 +409,10 @@ export default function App() {
     };
   }, []);
 
-  // Persist items
+  // Persist items safely via IndexedDB + localStorage (no QuotaExceededError on 9,000+ words)
   useEffect(() => {
-    localStorage.setItem('vocabflow_words_list', JSON.stringify(items));
+    if (!storageHydratedRef.current) return;
+    saveVocabularyList(items);
   }, [items]);
 
   // Persist settings
@@ -432,33 +496,76 @@ export default function App() {
     return true;
   };
 
-  // Bulk Import
+  // Bulk Import (optimized for 10,000+ words with per-item script & language detection)
   const handleBulkImport = (
     newItems: Omit<VocabularyItem, 'id' | 'createdAt'>[],
     replaceExisting: boolean
   ) => {
+    const baseTime = Date.now();
+    const defaultResolved = resolveValidatedLanguagePair();
+    const prefSrcObj = getLanguageByCode(defaultResolved.sourceLang);
+    const prefTgtObj = getLanguageByCode(defaultResolved.targetLang);
+
+    const { dominantSource, dominantTarget, hasSourceLetters, hasTargetLetters } =
+      detectBatchDominantLanguages(
+        newItems,
+        defaultResolved.sourceLang,
+        defaultResolved.targetLang
+      );
+
+    const pickVoiceForLang = (langObj: ReturnType<typeof getLanguageByCode>, explicitVoice?: string) => {
+      if (explicitVoice && langObj.voices.some((v) => v.id === explicitVoice)) return explicitVoice;
+      if (langObj.code === defaultResolved.sourceLang) return defaultResolved.sourceVoice;
+      if (langObj.code === defaultResolved.targetLang) return defaultResolved.targetVoice;
+      return langObj.defaultVoice;
+    };
+
     const prepared: VocabularyItem[] = newItems.map((it, idx) => {
-      const resolved = resolveValidatedLanguagePair({
-        sourceLang: it.sourceLang,
-        targetLang: it.targetLang,
-        sourceVoice: it.sourceVoice,
-        targetVoice: it.targetVoice,
-      });
+      const s = it.sourceText || it.english || '';
+      const t = it.targetText || it.arabic || '';
+
+      const detectedSrcObj = it.sourceLang
+        ? getLanguageByCode(it.sourceLang)
+        : resolveSmartFieldLanguage(
+            s,
+            prefSrcObj,
+            prefTgtObj,
+            dominantSource,
+            t,
+            hasSourceLetters
+          );
+
+      const detectedTgtObj = it.targetLang
+        ? getLanguageByCode(it.targetLang)
+        : t.trim()
+        ? resolveSmartFieldLanguage(
+            t,
+            prefTgtObj,
+            prefSrcObj,
+            dominantTarget,
+            s,
+            hasTargetLetters
+          )
+        : prefTgtObj.script === detectedSrcObj.script || prefTgtObj.code !== prefSrcObj.code
+        ? prefTgtObj
+        : detectedSrcObj;
+
       return {
-        id: 'bulk-' + Date.now() + '-' + idx,
-        sourceText: it.sourceText || it.english || '',
-        targetText: it.targetText || it.arabic || '',
-        english: it.sourceText || it.english || '',
-        arabic: it.targetText || it.arabic || '',
+        id: 'bulk-' + baseTime + '-' + idx,
+        sourceText: s,
+        targetText: t,
+        english: s,
+        arabic: t,
         mastered: false,
-        sourceLang: resolved.sourceLang,
-        targetLang: resolved.targetLang,
-        sourceVoice: resolved.sourceVoice,
-        targetVoice: resolved.targetVoice,
-        createdAt: Date.now() + idx,
+        sourceLang: detectedSrcObj.code,
+        targetLang: detectedTgtObj.code,
+        sourceVoice: pickVoiceForLang(detectedSrcObj, it.sourceVoice),
+        targetVoice: pickVoiceForLang(detectedTgtObj, it.targetVoice),
+        createdAt: baseTime + idx,
       };
     });
 
+    storageHydratedRef.current = true;
     if (replaceExisting) {
       setItems(prepared);
       setCurrentIndex(0);
@@ -504,8 +611,10 @@ export default function App() {
     speechService.stop();
     setIsPlaying(false);
     setPlaybackStage('idle');
+    storageHydratedRef.current = true;
     setItems([]);
     setCurrentIndex(0);
+    clearVocabularyStorage();
   };
 
   // Toggle mastered status
@@ -738,6 +847,11 @@ export default function App() {
             <BulkTextareaWorkstation
               items={items}
               onSetItems={setItems}
+              onImportFileRequest={(file) => {
+                setPendingImportFile(file);
+                setIsBulkImportOpen(true);
+              }}
+              onOpenBulkImport={() => setIsBulkImportOpen(true)}
               sourceLangName={sourceLang.name}
               targetLangName={targetLang.name}
               sourceLangCode={sourceLang.code}
@@ -933,10 +1047,16 @@ export default function App() {
       {/* Modals */}
       <BulkImportModal
         isOpen={isBulkImportOpen}
-        onClose={() => setIsBulkImportOpen(false)}
+        onClose={() => {
+          setIsBulkImportOpen(false);
+          setPendingImportFile(null);
+        }}
         onImport={handleBulkImport}
         sourceLangName={sourceLang.name}
         targetLangName={targetLang.name}
+        preferredLangs={[settings.sourceLang, settings.targetLang]}
+        initialFile={pendingImportFile}
+        onClearInitialFile={() => setPendingImportFile(null)}
         theme={theme}
       />
 

@@ -546,23 +546,37 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
       </div>
 
       {/* Playlist Drawer */}
-      {showPlayerCard && showPlaylist && (
+      {showPlayerCard && showPlaylist && (() => {
+        const playlistChunkSize = 100;
+        const activeChunkIdx = Math.floor(Math.max(0, currentIndex) / playlistChunkSize);
+        const start = activeChunkIdx * playlistChunkSize;
+        const end = Math.min(items.length, start + playlistChunkSize);
+        const visiblePlaylistItems = items.slice(start, end);
+
+        return (
         <div
           className={`border rounded-3xl p-5 shadow-xl animate-fade-in text-left ${
             isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
           }`}
         >
           <div
-            className={`flex items-center justify-between pb-3 border-b mb-3 ${
+            className={`flex items-center justify-between pb-3 border-b mb-3 gap-2 ${
               isLight ? 'border-slate-200' : 'border-slate-800'
             }`}
           >
-            <h3 className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              Playlist Queue ({items.length} words)
-            </h3>
+            <div className="min-w-0">
+              <h3 className={`font-bold text-sm truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Playlist Queue ({items.length.toLocaleString()} words)
+              </h3>
+              {items.length > playlistChunkSize && (
+                <p className="text-[11px] text-slate-400 font-mono">
+                  Showing {start + 1}–{end}
+                </p>
+              )}
+            </div>
             <button
               onClick={() => setShowPlaylist(false)}
-              className={`text-xs font-semibold cursor-pointer px-2.5 py-1 rounded-lg ${
+              className={`text-xs font-semibold cursor-pointer px-2.5 py-1 rounded-lg shrink-0 ${
                 isLight ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -571,7 +585,8 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
           </div>
 
           <div className="max-h-64 overflow-y-auto space-y-1.5 custom-scrollbar">
-            {items.map((item, idx) => {
+            {visiblePlaylistItems.map((item, offset) => {
+              const idx = start + offset;
               const isCurrent = idx === currentIndex;
               return (
                 <div
@@ -587,11 +602,11 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                       : 'hover:bg-slate-800/60 text-slate-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-5 text-center text-xs font-mono ${isCurrent && isLight ? 'text-blue-100' : 'text-slate-500'}`}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`w-8 text-center text-xs font-mono shrink-0 ${isCurrent && isLight ? 'text-blue-100' : 'text-slate-500'}`}>
                       {idx + 1}
                     </span>
-                    <div>
+                    <div className="min-w-0 truncate">
                       <span className="font-bold text-sm">
                         {item.sourceText || item.english}
                       </span>
@@ -601,14 +616,15 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                     </div>
                   </div>
                   {isCurrent && isPlaying && (
-                    <Volume2 className={`w-4 h-4 animate-pulse ${isLight ? 'text-white' : 'text-amber-400'}`} />
+                    <Volume2 className={`w-4 h-4 animate-pulse shrink-0 ${isLight ? 'text-white' : 'text-amber-400'}`} />
                   )}
                 </div>
               );
             })}
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

@@ -2893,122 +2893,367 @@ export function getVoiceById(voiceId: string) {
   };
 }
 
-// Detect language from text script
+const LANG_BY_CODE_MAP: Map<string, SupportedLanguage> = new Map(
+  SUPPORTED_LANGUAGES.map((l) => [l.code, l])
+);
+
+const getByExactCode = (code: string): SupportedLanguage =>
+  LANG_BY_CODE_MAP.get(code) || SUPPORTED_LANGUAGES[0];
+
+export function hasExplicitLanguageLetters(text: string): boolean {
+  return /[a-zA-Z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u0530-\u058F\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u0900-\u097F\u0980-\u09FF\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0E00-\u0E7F\u10A0-\u10FF\u1200-\u137F\u1780-\u17FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+    text
+  );
+}
+
+// Detect language from dominant text script and lexical/diacritic clues
 export function detectLanguageFromText(text: string): SupportedLanguage {
   const trimmed = text.trim();
   if (!trimmed) return SUPPORTED_LANGUAGES[0];
 
-  // Arabic / Persian / Urdu / Pashto / Sindhi / Uyghur script
-  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ar-EG') || SUPPORTED_LANGUAGES[0];
-  }
-  // Japanese (Hiragana / Katakana)
-  if (/[\u3040-\u309F\u30A0-\u30FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ja-JP') || SUPPORTED_LANGUAGES[0];
-  }
-  // Chinese (Hanzi)
-  if (/[\u4E00-\u9FFF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'zh-CN') || SUPPORTED_LANGUAGES[0];
-  }
-  // Korean (Hangul)
-  if (/[\uAC00-\uD7AF\u1100-\u11FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ko-KR') || SUPPORTED_LANGUAGES[0];
-  }
-  // Hebrew / Yiddish script
-  if (/[\u0590-\u05FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'he-IL') || SUPPORTED_LANGUAGES[0];
-  }
-  // Cyrillic (Russian, Ukrainian, etc.)
-  if (/[\u0400-\u04FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ru-RU') || SUPPORTED_LANGUAGES[0];
-  }
-  // Greek
-  if (/[\u0370-\u03FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'el-GR') || SUPPORTED_LANGUAGES[0];
-  }
-  // Devanagari (Hindi, Marathi, Nepali, Sanskrit)
-  if (/[\u0900-\u097F]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'hi-IN') || SUPPORTED_LANGUAGES[0];
-  }
-  // Bengali / Assamese
-  if (/[\u0980-\u09FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'bn-BD') || SUPPORTED_LANGUAGES[0];
-  }
-  // Tamil
-  if (/[\u0B80-\u0BFF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ta-IN') || SUPPORTED_LANGUAGES[0];
-  }
-  // Telugu
-  if (/[\u0C00-\u0C7F]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'te-IN') || SUPPORTED_LANGUAGES[0];
-  }
-  // Kannada
-  if (/[\u0C80-\u0CFF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'kn-IN') || SUPPORTED_LANGUAGES[0];
-  }
-  // Malayalam
-  if (/[\u0D00-\u0D7F]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ml-IN') || SUPPORTED_LANGUAGES[0];
-  }
-  // Thai
-  if (/[\u0E00-\u0E7F]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'th-TH') || SUPPORTED_LANGUAGES[0];
-  }
-  // Khmer
-  if (/[\u1780-\u17FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'km-KH') || SUPPORTED_LANGUAGES[0];
-  }
-  // Georgian
-  if (/[\u10A0-\u10FF]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'ka-GE') || SUPPORTED_LANGUAGES[0];
-  }
-  // Armenian
-  if (/[\u0530-\u058F]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'hy-AM') || SUPPORTED_LANGUAGES[0];
-  }
-  // Amharic (Ethiopic)
-  if (/[\u1200-\u137F]/.test(trimmed)) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'am-ET') || SUPPORTED_LANGUAGES[0];
+  let arabic = 0;
+  let japaneseKana = 0;
+  let han = 0;
+  let hangul = 0;
+  let hebrew = 0;
+  let cyrillic = 0;
+  let greek = 0;
+  let devanagari = 0;
+  let bengali = 0;
+  let tamil = 0;
+  let telugu = 0;
+  let kannada = 0;
+  let malayalam = 0;
+  let thai = 0;
+  let khmer = 0;
+  let georgian = 0;
+  let armenian = 0;
+  let ethiopic = 0;
+  let latin = 0;
+
+  const scanLen = Math.min(trimmed.length, 400);
+  for (let i = 0; i < scanLen; i++) {
+    const c = trimmed.charCodeAt(i);
+    if ((c >= 0x0041 && c <= 0x005a) || (c >= 0x0061 && c <= 0x007a) || (c >= 0x00c0 && c <= 0x024f) || (c >= 0x1e00 && c <= 0x1eff)) {
+      latin++;
+    } else if (
+      (c >= 0x0600 && c <= 0x06ff) ||
+      (c >= 0x0750 && c <= 0x077f) ||
+      (c >= 0x08a0 && c <= 0x08ff) ||
+      (c >= 0xfb50 && c <= 0xfdff) ||
+      (c >= 0xfe70 && c <= 0xfeff)
+    ) {
+      arabic++;
+    } else if ((c >= 0x3040 && c <= 0x309f) || (c >= 0x30a0 && c <= 0x30ff)) {
+      japaneseKana++;
+    } else if (c >= 0x4e00 && c <= 0x9fff) {
+      han++;
+    } else if ((c >= 0xac00 && c <= 0xd7af) || (c >= 0x1100 && c <= 0x11ff)) {
+      hangul++;
+    } else if (c >= 0x0590 && c <= 0x05ff) {
+      hebrew++;
+    } else if (c >= 0x0400 && c <= 0x04ff) {
+      cyrillic++;
+    } else if (c >= 0x0370 && c <= 0x03ff) {
+      greek++;
+    } else if (c >= 0x0900 && c <= 0x097f) {
+      devanagari++;
+    } else if (c >= 0x0980 && c <= 0x09ff) {
+      bengali++;
+    } else if (c >= 0x0b80 && c <= 0x0bff) {
+      tamil++;
+    } else if (c >= 0x0c00 && c <= 0x0c7f) {
+      telugu++;
+    } else if (c >= 0x0c80 && c <= 0x0cff) {
+      kannada++;
+    } else if (c >= 0x0d00 && c <= 0x0d7f) {
+      malayalam++;
+    } else if (c >= 0x0e00 && c <= 0x0e7f) {
+      thai++;
+    } else if (c >= 0x1780 && c <= 0x17ff) {
+      khmer++;
+    } else if (c >= 0x10a0 && c <= 0x10ff) {
+      georgian++;
+    } else if (c >= 0x0530 && c <= 0x058f) {
+      armenian++;
+    } else if (c >= 0x1200 && c <= 0x137f) {
+      ethiopic++;
+    }
   }
 
-  // European language diacritic & common word clues
+  // Japanese uses both Kana and Kanji (Han)
+  const japaneseScore = japaneseKana > 0 ? japaneseKana + han : 0;
+
+  const scriptScores: Array<[string, number]> = [
+    ['arabic', arabic],
+    ['japanese', japaneseScore],
+    ['chinese', japaneseKana === 0 ? han : 0],
+    ['korean', hangul],
+    ['hebrew', hebrew],
+    ['cyrillic', cyrillic],
+    ['greek', greek],
+    ['devanagari', devanagari],
+    ['bengali', bengali],
+    ['tamil', tamil],
+    ['telugu', telugu],
+    ['kannada', kannada],
+    ['malayalam', malayalam],
+    ['thai', thai],
+    ['khmer', khmer],
+    ['georgian', georgian],
+    ['armenian', armenian],
+    ['ethiopic', ethiopic],
+    ['latin', latin],
+  ];
+
+  let topScript = 'latin';
+  let topCount = 0;
+  for (const [sc, cnt] of scriptScores) {
+    if (cnt > topCount) {
+      topCount = cnt;
+      topScript = sc;
+    }
+  }
+
+  if (topScript === 'arabic') {
+    if (/[ٹڈڑںےۀ]/.test(trimmed)) return getByExactCode('ur-PK');
+    if (/[پچژگ]/.test(trimmed) && !/[ةإأؤئ]/.test(trimmed)) return getByExactCode('fa-IR');
+    return getByExactCode('ar-EG');
+  }
+  if (topScript === 'japanese') return getByExactCode('ja-JP');
+  if (topScript === 'chinese') return getByExactCode('zh-CN');
+  if (topScript === 'korean') return getByExactCode('ko-KR');
+  if (topScript === 'hebrew') return getByExactCode('he-IL');
+  if (topScript === 'cyrillic') {
+    if (/[іїєґІЇЄҐ]/.test(trimmed)) return getByExactCode('uk-UA');
+    return getByExactCode('ru-RU');
+  }
+  if (topScript === 'greek') return getByExactCode('el-GR');
+  if (topScript === 'devanagari') return getByExactCode('hi-IN');
+  if (topScript === 'bengali') return getByExactCode('bn-BD');
+  if (topScript === 'tamil') return getByExactCode('ta-IN');
+  if (topScript === 'telugu') return getByExactCode('te-IN');
+  if (topScript === 'kannada') return getByExactCode('kn-IN');
+  if (topScript === 'malayalam') return getByExactCode('ml-IN');
+  if (topScript === 'thai') return getByExactCode('th-TH');
+  if (topScript === 'khmer') return getByExactCode('km-KH');
+  if (topScript === 'georgian') return getByExactCode('ka-GE');
+  if (topScript === 'armenian') return getByExactCode('hy-AM');
+  if (topScript === 'ethiopic') return getByExactCode('am-ET');
+
+  // Latin script language clues
   const lower = trimmed.toLowerCase();
+  if (/[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]/.test(lower)) {
+    return getByExactCode('vi-VN');
+  }
   if (
-    /[éàèùâêîôûçëïüœæ]/.test(lower) ||
+    /[ğışİ]/.test(trimmed) ||
+    /\b(merhaba|teşekkür|tesekkur|günaydın|gunaydin|nasılsın|nasilsin|benim adım|benim adim)\b/.test(lower)
+  ) {
+    return getByExactCode('tr-TR');
+  }
+  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(trimmed)) {
+    return getByExactCode('pl-PL');
+  }
+  if (
+    /[èùâêîôûëïüœæ]/.test(lower) ||
     /\b(bonjour|bonsoir|salut|merci|comment|je suis|j'ai|c'est|s'il vous|oui|nous sommes|vous êtes|au revoir|mon nom)\b/.test(lower)
   ) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'fr-FR') || SUPPORTED_LANGUAGES[0];
+    return getByExactCode('fr-FR');
   }
   if (
     /[äöüß]/.test(lower) ||
-    /\b(guten morgen|guten tag|gute nacht|danke|bitte|ich bin|ich heiße|wie geht|sehr gut|nicht|auf wiedersehen|tschüss)\b/.test(lower)
+    /\b(guten morgen|guten tag|gute nacht|danke|bitte|ich bin|ich heiße|wie geht|sehr gut|auf wiedersehen|tschüss)\b/.test(lower)
   ) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'de-DE') || SUPPORTED_LANGUAGES[0];
+    return getByExactCode('de-DE');
   }
   if (
-    /[áéíóúñ¿¡]/.test(lower) ||
-    /\b(hola|gracias|buenos dias|buenas tardes|buenas noches|por favor|como estas|me llamo|mucho gusto|amigo|adios)\b/.test(lower)
+    /[ñ¿¡íú]/.test(lower) ||
+    /\b(hola|gracias|buenos dias|buenos días|buenas tardes|buenas noches|por favor|como estas|cómo estás|me llamo|mucho gusto|amigo|adios|adiós)\b/.test(lower)
   ) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'es-ES') || SUPPORTED_LANGUAGES[0];
+    return getByExactCode('es-ES');
   }
   if (
     /\b(ciao|grazie|buongiorno|buonasera|come stai|mi chiamo|piacere|arrivederci|per favore|molto bene)\b/.test(lower)
   ) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'it-IT') || SUPPORTED_LANGUAGES[0];
+    return getByExactCode('it-IT');
   }
   if (
-    /[ãõç]/.test(lower) ||
+    /[ãõ]/.test(lower) ||
     /\b(obrigado|obrigada|bom dia|boa tarde|boa noite|tudo bem|como vai|meu nome)\b/.test(lower)
   ) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'pt-BR') || SUPPORTED_LANGUAGES[0];
-  }
-  if (
-    /[ğışçöü]/.test(lower) ||
-    /\b(merhaba|teşekkür|tesekkur|günaydın|gunaydin|nasılsın|nasilsin|benim adım|benim adim)\b/.test(lower)
-  ) {
-    return SUPPORTED_LANGUAGES.find((l) => l.code === 'tr-TR') || SUPPORTED_LANGUAGES[0];
+    return getByExactCode('pt-BR');
   }
 
-  // Default to English
-  return SUPPORTED_LANGUAGES.find((l) => l.code === 'en-US') || SUPPORTED_LANGUAGES[0];
+  return getByExactCode('en-US');
 }
+
+function hasStrongLatinEvidence(text: string, detectedCode: string): boolean {
+  const lower = text.toLowerCase();
+  if (detectedCode === 'en-US') {
+    return (
+      /\b(the|a|an|and|or|but|with|for|from|this|that|these|those|to|of|in|on|at|by|as|is|are|was|were|be|been|being|have|has|had|do|does|did|will|would|could|should|can|may|might|it|its|you|your|we|they|our|my|he|she|his|her|one|all|every|very|just|get|work|make|like|time|day|year|years|about|into|over|after|also|only|good|new|first|because|when|where|how|what|who|which|there|their|more|most|some|any|no|not|if|so|out|up|down|here|now|then|well|such|developer|engineer|manager|email|gmail|welcome|hello|name|sales|mobile|address|country|egypt|experience|skills|professional|revolutionary|product|changes|everything|applause|career|fortunate)\b/.test(
+        lower
+      ) ||
+      /[a-z]'[strmdlv]|n't\b/.test(lower) ||
+      /\b[a-z]{3,}(?:tion|ment|ness|ship|able|ible|ous|ful|less|ing)\b/.test(lower)
+    );
+  }
+  // French, German, Spanish, Italian, Portuguese, Turkish, Polish, Vietnamese returned from detectLanguageFromText
+  // already matched diacritics or explicit phrases
+  return true;
+}
+
+/**
+ * Resolves the true language & dialect for a single imported field (Source or Translation),
+ * preventing English/Latin files or numeric/timestamp fields (like "0:07") from being mislabeled as Arabic.
+ */
+export function resolveSmartFieldLanguage(
+  text: string,
+  preferredLang: SupportedLanguage,
+  partnerLang: SupportedLanguage,
+  batchDominantLang?: SupportedLanguage,
+  partnerText?: string,
+  hasBatchFieldLetters = true
+): SupportedLanguage {
+  const trimmed = text.trim();
+  if (!trimmed || !hasExplicitLanguageLetters(trimmed)) {
+    if (!hasBatchFieldLetters && partnerText && hasExplicitLanguageLetters(partnerText)) {
+      const partnerDetected = resolveSmartFieldLanguage(partnerText, partnerLang, preferredLang);
+      return partnerDetected;
+    }
+    return batchDominantLang || preferredLang;
+  }
+
+  const detected = detectLanguageFromText(trimmed);
+  const detBase = detected.code.split('-')[0].toLowerCase();
+  const prefBase = preferredLang.code.split('-')[0].toLowerCase();
+  const partBase = partnerLang.code.split('-')[0].toLowerCase();
+
+  // 1. Exact base language match with user's preferred language -> keep user's dialect (e.g. en-GB, ar-EG)
+  if (detBase === prefBase) {
+    return preferredLang;
+  }
+
+  // 2. Script mismatch against preferred language (e.g. "Full Stack Web Developer" when preferred is "Arabic (Egypt)")
+  if (detected.script !== preferredLang.script) {
+    // If partner shares the same base language (e.g. user has Arabic -> English (UK)), honor user's dialect en-GB!
+    if (detBase === partBase) {
+      return partnerLang;
+    }
+    return detected;
+  }
+
+  // 3. Same Arabic or Cyrillic family: allow Persian/Urdu/Ukrainian distinctions, keep Arabic/Russian dialects
+  if (preferredLang.script === 'arabic') {
+    if (detected.code === 'fa-IR' || detected.code === 'ur-PK') return detected;
+    return preferredLang;
+  }
+  if (preferredLang.script === 'cyrillic') {
+    if (detected.code === 'uk-UA') return detected;
+    return preferredLang;
+  }
+
+  // 4. Both Latin script (e.g. French vs English vs Spanish)
+  if (preferredLang.script === 'latin' && detected.script === 'latin') {
+    if (hasStrongLatinEvidence(trimmed, detected.code)) {
+      if (detBase === partBase) return partnerLang;
+      return detected;
+    }
+    if (batchDominantLang && batchDominantLang.script === 'latin') {
+      return batchDominantLang;
+    }
+    return preferredLang;
+  }
+
+  return detected;
+}
+
+/**
+ * Computes dominant source & target languages across an evenly distributed sample of imported entries
+ * so rows with only numbers/timestamps/emails (e.g. "0:07", "+20...") inherit the document's true language.
+ */
+export function detectBatchDominantLanguages(
+  entries: Array<{ sourceText?: string; targetText?: string; english?: string; arabic?: string }>,
+  preferredSourceCode: string,
+  preferredTargetCode: string
+): {
+  dominantSource: SupportedLanguage;
+  dominantTarget: SupportedLanguage;
+  hasSourceLetters: boolean;
+  hasTargetLetters: boolean;
+} {
+  const prefSrc = getLanguageByCode(preferredSourceCode);
+  const prefTgt = getLanguageByCode(preferredTargetCode);
+
+  const srcCounts = new Map<string, number>();
+  const tgtCounts = new Map<string, number>();
+  let nonEmptyTargetCount = 0;
+
+  const total = entries.length;
+  const maxSamples = 200;
+  const step = total > maxSamples ? total / maxSamples : 1;
+
+  for (let sIdx = 0; sIdx < Math.min(total, maxSamples); sIdx++) {
+    const idx = Math.min(total - 1, Math.floor(sIdx * step));
+    const entry = entries[idx];
+    if (!entry) continue;
+
+    const s = (entry.sourceText || entry.english || '').trim();
+    if (s && hasExplicitLanguageLetters(s)) {
+      const lang = resolveSmartFieldLanguage(s, prefSrc, prefTgt);
+      srcCounts.set(lang.code, (srcCounts.get(lang.code) || 0) + 1);
+    }
+
+    const t = (entry.targetText || entry.arabic || '').trim();
+    if (t) {
+      nonEmptyTargetCount++;
+      if (hasExplicitLanguageLetters(t)) {
+        const lang = resolveSmartFieldLanguage(t, prefTgt, prefSrc);
+        tgtCounts.set(lang.code, (tgtCounts.get(lang.code) || 0) + 1);
+      }
+    }
+  }
+
+  let dominantSource = prefSrc;
+  let maxSrc = 0;
+  for (const [code, cnt] of srcCounts.entries()) {
+    if (cnt > maxSrc) {
+      maxSrc = cnt;
+      dominantSource = getLanguageByCode(code);
+    }
+  }
+
+  let dominantTarget = prefTgt;
+  let maxTgt = 0;
+  for (const [code, cnt] of tgtCounts.entries()) {
+    if (cnt > maxTgt) {
+      maxTgt = cnt;
+      dominantTarget = getLanguageByCode(code);
+    }
+  }
+
+  const hasSourceLetters = maxSrc > 0;
+  const hasTargetLetters = maxTgt > 0;
+
+  // Critical fix: if Source column contains NO letters (e.g. timestamps "0:07", row numbers "1, 2, 3"),
+  // inherit the true detected Target language instead of leaving preferred Arabic/top-bar language!
+  if (!hasSourceLetters && hasTargetLetters) {
+    dominantSource = dominantTarget;
+  }
+
+  // If Target column contains no letters:
+  // - If it has non-letter values (timestamps/numbers), match dominantSource;
+  // - If empty (single-column list), keep target partner language only when distinct from source.
+  if (!hasTargetLetters && hasSourceLetters) {
+    dominantTarget =
+      nonEmptyTargetCount > 0
+        ? dominantSource
+        : dominantSource.code === prefSrc.code
+        ? prefTgt
+        : dominantSource;
+  }
+
+  return { dominantSource, dominantTarget, hasSourceLetters, hasTargetLetters };
+}
+
