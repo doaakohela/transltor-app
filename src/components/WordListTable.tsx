@@ -21,6 +21,7 @@ interface WordListTableProps {
   items: VocabularyItem[];
   settings: AudioSettings;
   onDeleteItem: (id: string) => void;
+  onClearAll?: () => void;
   onToggleMastered: (id: string) => void;
   onUpdateItem: (id: string, sourceText: string, targetText: string) => void;
   onPlayItem: (item: VocabularyItem) => void;
@@ -31,6 +32,7 @@ export const WordListTable: React.FC<WordListTableProps> = ({
   items,
   settings,
   onDeleteItem,
+  onClearAll,
   onToggleMastered,
   onUpdateItem,
   onPlayItem,
@@ -269,6 +271,23 @@ export const WordListTable: React.FC<WordListTableProps> = ({
               <span className="sm:hidden">MP3</span>
               <span className="hidden sm:inline">Download Master MP3</span>
             </button>
+
+            {/* Clear Entire Vocabulary List Button (Next to MP3 on Mobile, Tablet & Desktop) */}
+            {onClearAll && (
+              <button
+                type="button"
+                onClick={onClearAll}
+                disabled={items.length === 0}
+                className={`p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed border shrink-0 ${
+                  isLight
+                    ? 'bg-[#1a73e8] hover:bg-red-600 disabled:hover:bg-[#1a73e8] text-white border-[#1a73e8] hover:border-red-600'
+                    : 'bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-400 border-slate-700/80 hover:border-red-500/40'
+                }`}
+                title="Clear entire vocabulary list"
+              >
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
 
             {/* Export Text */}
             <button

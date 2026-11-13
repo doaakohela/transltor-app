@@ -464,6 +464,17 @@ export default function App() {
     }
   };
 
+  // Clear all items and stop any active playback
+  const handleClearAllItems = () => {
+    playbackSessionRef.current += 1;
+    isPlayingRef.current = false;
+    speechService.stop();
+    setIsPlaying(false);
+    setPlaybackStage('idle');
+    setItems([]);
+    setCurrentIndex(0);
+  };
+
   // Toggle mastered status
   const handleToggleMastered = (id: string) => {
     setItems((prev) =>
@@ -700,6 +711,7 @@ export default function App() {
               items={items}
               settings={settings}
               onDeleteItem={handleDeleteItem}
+              onClearAll={handleClearAllItems}
               onToggleMastered={handleToggleMastered}
               onUpdateItem={handleUpdateItem}
               onPlayItem={handlePlayItem}
