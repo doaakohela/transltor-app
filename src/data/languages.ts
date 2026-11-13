@@ -2971,18 +2971,41 @@ export function detectLanguageFromText(text: string): SupportedLanguage {
     return SUPPORTED_LANGUAGES.find((l) => l.code === 'am-ET') || SUPPORTED_LANGUAGES[0];
   }
 
-  // European language clues
+  // European language diacritic & common word clues
   const lower = trimmed.toLowerCase();
-  if (/[éàèùâêîôûçëïüœæ]/.test(lower)) {
+  if (
+    /[éàèùâêîôûçëïüœæ]/.test(lower) ||
+    /\b(bonjour|bonsoir|salut|merci|comment|je suis|j'ai|c'est|s'il vous|oui|nous sommes|vous êtes|au revoir|mon nom)\b/.test(lower)
+  ) {
     return SUPPORTED_LANGUAGES.find((l) => l.code === 'fr-FR') || SUPPORTED_LANGUAGES[0];
   }
-  if (/[äöüß]/.test(lower)) {
+  if (
+    /[äöüß]/.test(lower) ||
+    /\b(guten morgen|guten tag|gute nacht|danke|bitte|ich bin|ich heiße|wie geht|sehr gut|nicht|auf wiedersehen|tschüss)\b/.test(lower)
+  ) {
     return SUPPORTED_LANGUAGES.find((l) => l.code === 'de-DE') || SUPPORTED_LANGUAGES[0];
   }
-  if (/[áéíóúñ¿¡]/.test(lower)) {
+  if (
+    /[áéíóúñ¿¡]/.test(lower) ||
+    /\b(hola|gracias|buenos dias|buenas tardes|buenas noches|por favor|como estas|me llamo|mucho gusto|amigo|adios)\b/.test(lower)
+  ) {
     return SUPPORTED_LANGUAGES.find((l) => l.code === 'es-ES') || SUPPORTED_LANGUAGES[0];
   }
-  if (/[ğışçöü]/.test(lower)) {
+  if (
+    /\b(ciao|grazie|buongiorno|buonasera|come stai|mi chiamo|piacere|arrivederci|per favore|molto bene)\b/.test(lower)
+  ) {
+    return SUPPORTED_LANGUAGES.find((l) => l.code === 'it-IT') || SUPPORTED_LANGUAGES[0];
+  }
+  if (
+    /[ãõç]/.test(lower) ||
+    /\b(obrigado|obrigada|bom dia|boa tarde|boa noite|tudo bem|como vai|meu nome)\b/.test(lower)
+  ) {
+    return SUPPORTED_LANGUAGES.find((l) => l.code === 'pt-BR') || SUPPORTED_LANGUAGES[0];
+  }
+  if (
+    /[ğışçöü]/.test(lower) ||
+    /\b(merhaba|teşekkür|tesekkur|günaydın|gunaydin|nasılsın|nasilsin|benim adım|benim adim)\b/.test(lower)
+  ) {
     return SUPPORTED_LANGUAGES.find((l) => l.code === 'tr-TR') || SUPPORTED_LANGUAGES[0];
   }
 

@@ -206,21 +206,54 @@ export default function App() {
             const t = (item.targetText || item.arabic || '').trim();
             return !(s === 'schedule' || t === 'جدول مواعيد' || t.includes('جدول مواعيد'));
           });
-          return cleaned.map((item: any) => ({
-            id: item.id || 'v-' + Math.random().toString(36).substring(2, 9),
-            sourceText: item.sourceText || item.english || '',
-            targetText: item.targetText || item.arabic || '',
-            english: item.sourceText || item.english || '',
-            arabic: item.targetText || item.arabic || '',
-            phonetic: item.phonetic,
-            category: item.category,
-            mastered: Boolean(item.mastered),
-            sourceLang: item.sourceLang,
-            targetLang: item.targetLang,
-            sourceVoice: item.sourceVoice,
-            targetVoice: item.targetVoice,
-            createdAt: item.createdAt || Date.now(),
-          }));
+          return cleaned.map((item: any) => {
+            const srcText = item.sourceText || item.english || '';
+            const tgtText = item.targetText || item.arabic || '';
+            let fixedSourceLang = item.sourceLang;
+            let fixedSourceVoice = item.sourceVoice;
+            let fixedTargetLang = item.targetLang;
+            let fixedTargetVoice = item.targetVoice;
+
+            if (fixedSourceLang && srcText.trim()) {
+              const savedSrcObj = getLanguageByCode(fixedSourceLang);
+              const detectedSrc = detectLanguageFromText(srcText);
+              if (
+                (detectedSrc.script !== 'latin' && savedSrcObj.script !== detectedSrc.script) ||
+                (savedSrcObj.script !== 'latin' && detectedSrc.script === 'latin')
+              ) {
+                fixedSourceLang = detectedSrc.code;
+                fixedSourceVoice = detectedSrc.defaultVoice;
+              }
+            }
+
+            if (fixedTargetLang && tgtText.trim()) {
+              const savedTgtObj = getLanguageByCode(fixedTargetLang);
+              const detectedTgt = detectLanguageFromText(tgtText);
+              if (
+                (detectedTgt.script !== 'latin' && savedTgtObj.script !== detectedTgt.script) ||
+                (savedTgtObj.script !== 'latin' && detectedTgt.script === 'latin')
+              ) {
+                fixedTargetLang = detectedTgt.code;
+                fixedTargetVoice = detectedTgt.defaultVoice;
+              }
+            }
+
+            return {
+              id: item.id || 'v-' + Math.random().toString(36).substring(2, 9),
+              sourceText: srcText,
+              targetText: tgtText,
+              english: srcText,
+              arabic: tgtText,
+              phonetic: item.phonetic,
+              category: item.category,
+              mastered: Boolean(item.mastered),
+              sourceLang: fixedSourceLang,
+              targetLang: fixedTargetLang,
+              sourceVoice: fixedSourceVoice,
+              targetVoice: fixedTargetVoice,
+              createdAt: item.createdAt || Date.now(),
+            };
+          });
         }
       }
     } catch (e) {
@@ -534,7 +567,36 @@ export default function App() {
       return { lang: prevObj.code, voice: previousVoice || prevObj.defaultVoice };
     }
 
-    // Check backend Google auto-detection so same-script languages (e.g. French <-> English) are detected accurately
+    const scriptDetected = detectLanguageFromText(trimmed);
+
+    const isScriptCompatible = (candidateCode: string) => {
+      const candidateObj = getLanguageByCode(candidateCode);
+      // Never accept a Latin detection (e.g. 'en') for Arabic/Cyrillic/CJK text, or vice versa
+      return candidateObj.script === scriptDetected.script;
+    };
+
+    // 1. Try direct browser Google Translate auto-detect first (most accurate for all 140+ languages)
+    try {
+      const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(trimmed)}`;
+      const gRes = await fetch(gUrl, { signal: AbortSignal.timeout(2500) });
+      if (gRes.ok) {
+        const gData = await gRes.json();
+        const apiDetected =
+          (typeof gData?.[2] === 'string' && gData[2]) ||
+          (typeof gData?.[8]?.[0]?.[0] === 'string' && gData[8][0][0]);
+        if (apiDetected && isScriptCompatible(apiDetected)) {
+          return resolveLanguageAndVoiceForBase(
+            apiDetected,
+            previousLangCode,
+            previousVoice
+          );
+        }
+      }
+    } catch {
+      // Fall back to server proxy or local script detector
+    }
+
+    // 2. Fallback to server proxy auto-detect (validated against Unicode script!)
     try {
       const baseUrl = speechService.getBaseUrl();
       const res = await fetch(`${baseUrl}/api/translate`, {
@@ -544,12 +606,13 @@ export default function App() {
           text: trimmed,
           sourceLang: 'auto',
           targetLang: 'en',
+          detectOnly: true,
         }),
         signal: AbortSignal.timeout(2500),
       });
       if (res.ok) {
         const data = await res.json();
-        if (data?.detectedLang && typeof data.detectedLang === 'string') {
+        if (data?.detectedLang && typeof data.detectedLang === 'string' && isScriptCompatible(data.detectedLang)) {
           return resolveLanguageAndVoiceForBase(
             data.detectedLang,
             previousLangCode,
@@ -558,10 +621,9 @@ export default function App() {
         }
       }
     } catch {
-      // Fall back to script-level detector below
+      // Fall back to local detector below
     }
 
-    const scriptDetected = detectLanguageFromText(trimmed);
     return resolveLanguageAndVoiceForBase(
       scriptDetected.code,
       previousLangCode,
@@ -578,18 +640,24 @@ export default function App() {
 
     if (!existingItem) return;
 
-    const oldSource = (existingItem.sourceText || existingItem.english || '').trim();
-    const oldTarget = (existingItem.targetText || existingItem.arabic || '').trim();
-    const sourceChanged = cleanSource !== oldSource;
-    const targetChanged = cleanTarget !== oldTarget;
-
-    if (!sourceChanged && !targetChanged) return;
-
     const curSettings = settingsRef.current;
     const prevSourceLang = existingItem.sourceLang || curSettings.sourceLang || 'en-US';
     const prevTargetLang = existingItem.targetLang || curSettings.targetLang || 'es-ES';
     const prevSourceVoice = existingItem.sourceVoice || curSettings.sourceVoice;
     const prevTargetVoice = existingItem.targetVoice || curSettings.targetVoice;
+
+    const oldSource = (existingItem.sourceText || existingItem.english || '').trim();
+    const oldTarget = (existingItem.targetText || existingItem.arabic || '').trim();
+    const sourceChanged = cleanSource !== oldSource;
+    const targetChanged = cleanTarget !== oldTarget;
+    const sourceScriptMismatch =
+      Boolean(cleanSource) &&
+      detectLanguageFromText(cleanSource).script !== getLanguageByCode(prevSourceLang).script;
+    const targetScriptMismatch =
+      Boolean(cleanTarget) &&
+      detectLanguageFromText(cleanTarget).script !== getLanguageByCode(prevTargetLang).script;
+
+    if (!sourceChanged && !targetChanged && !sourceScriptMismatch && !targetScriptMismatch) return;
 
     // Unlock audio synchronously inside click/Enter gesture and stop any stale audio for this item
     const wasContinuousPlaying = isPlayingRef.current;
@@ -604,7 +672,7 @@ export default function App() {
     // Immediate script-level adjustment for instant UI feedback while async detection completes
     let immediateSrcLang = prevSourceLang;
     let immediateSrcVoice = prevSourceVoice;
-    if (sourceChanged && cleanSource) {
+    if ((sourceChanged || sourceScriptMismatch) && cleanSource) {
       const quickSrc = detectLanguageFromText(cleanSource);
       if (quickSrc.script !== getLanguageByCode(prevSourceLang).script) {
         const resolved = resolveLanguageAndVoiceForBase(quickSrc.code, prevSourceLang, prevSourceVoice);
@@ -615,7 +683,7 @@ export default function App() {
 
     let immediateTgtLang = prevTargetLang;
     let immediateTgtVoice = prevTargetVoice;
-    if (targetChanged && cleanTarget) {
+    if ((targetChanged || targetScriptMismatch) && cleanTarget) {
       const quickTgt = detectLanguageFromText(cleanTarget);
       if (quickTgt.script !== getLanguageByCode(prevTargetLang).script) {
         const resolved = resolveLanguageAndVoiceForBase(quickTgt.code, prevTargetLang, prevTargetVoice);
@@ -642,12 +710,12 @@ export default function App() {
       )
     );
 
-    // Accurate multi-language detection (handles Latin languages like French -> English too)
+    // Accurate multi-language detection (handles Latin languages like French -> English too, while respecting script)
     const [finalSrc, finalTgt] = await Promise.all([
-      sourceChanged && cleanSource
+      (sourceChanged || sourceScriptMismatch) && cleanSource
         ? detectEditedFieldLanguage(cleanSource, prevSourceLang, prevSourceVoice)
         : Promise.resolve({ lang: immediateSrcLang, voice: immediateSrcVoice }),
-      targetChanged && cleanTarget
+      (targetChanged || targetScriptMismatch) && cleanTarget
         ? detectEditedFieldLanguage(cleanTarget, prevTargetLang, prevTargetVoice)
         : Promise.resolve({ lang: immediateTgtLang, voice: immediateTgtVoice }),
     ]);

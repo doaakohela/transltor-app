@@ -508,10 +508,34 @@ export interface TranslateParams {
   text: string;
   sourceLang?: string;
   targetLang?: string;
+  detectOnly?: boolean;
+}
+
+function detectServerScriptLang(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return 'en';
+  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(trimmed)) return 'ar';
+  if (/[\u3040-\u309F\u30A0-\u30FF]/.test(trimmed)) return 'ja';
+  if (/[\u4E00-\u9FFF]/.test(trimmed)) return 'zh-CN';
+  if (/[\uAC00-\uD7AF\u1100-\u11FF]/.test(trimmed)) return 'ko';
+  if (/[\u0590-\u05FF]/.test(trimmed)) return 'he';
+  if (/[\u0400-\u04FF]/.test(trimmed)) return 'ru';
+  if (/[\u0370-\u03FF]/.test(trimmed)) return 'el';
+  if (/[\u0900-\u097F]/.test(trimmed)) return 'hi';
+  if (/[\u0980-\u09FF]/.test(trimmed)) return 'bn';
+  if (/[\u0B80-\u0BFF]/.test(trimmed)) return 'ta';
+  if (/[\u0C00-\u0C7F]/.test(trimmed)) return 'te';
+  if (/[\u0E00-\u0E7F]/.test(trimmed)) return 'th';
+  const lower = trimmed.toLowerCase();
+  if (/[éàèùâêîôûçëïüœæ]/.test(lower) || /\b(bonjour|merci|je suis|c'est|salut)\b/.test(lower)) return 'fr';
+  if (/[äöüß]/.test(lower) || /\b(guten morgen|danke|ich bin)\b/.test(lower)) return 'de';
+  if (/[áéíóúñ¿¡]/.test(lower) || /\b(hola|gracias|buenos dias|me llamo)\b/.test(lower)) return 'es';
+  if (/[ğışçöü]/.test(lower) || /\b(merhaba|teşekkür)\b/.test(lower)) return 'tr';
+  return 'en';
 }
 
 export async function translateText(params: TranslateParams) {
-  const { text, sourceLang = 'auto', targetLang = 'ar' } = params;
+  const { text, sourceLang = 'auto', targetLang = 'ar', detectOnly = false } = params;
   if (!text || typeof text !== 'string') {
     throw new Error('Text is required for translation');
   }
@@ -522,7 +546,7 @@ export async function translateText(params: TranslateParams) {
   }
 
   let translatedText = '';
-  let detectedSourceLang = sourceLang === 'auto' ? 'en' : sourceLang;
+  let detectedSourceLang = sourceLang === 'auto' ? detectServerScriptLang(clean) : sourceLang;
 
   // 1. Google Translate engine (Instant, matches Google Translate results 100%)
   try {
@@ -530,12 +554,12 @@ export async function translateText(params: TranslateParams) {
     const tgtCode = targetLang.split('-')[0];
     const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(srcCode)}&tl=${encodeURIComponent(tgtCode)}&dt=t&q=${encodeURIComponent(clean)}`;
 
-    const response = await fetch(gUrl, { signal: AbortSignal.timeout(2500) });
+    const response = await fetch(gUrl, { signal: AbortSignal.timeout(2000) });
     if (response.ok) {
       const data = await response.json();
       if (data && Array.isArray(data[0])) {
         translatedText = data[0].map((item: any) => item[0]).join('');
-        if (data[2]) {
+        if (typeof data[2] === 'string' && data[2]) {
           detectedSourceLang = data[2];
         }
       }
@@ -544,8 +568,8 @@ export async function translateText(params: TranslateParams) {
     console.warn('Google Translate API error, falling back to Gemini:', gErr);
   }
 
-  // 2. Fallback to Gemini if Google endpoint failed
-  if (!translatedText && process.env.GEMINI_API_KEY) {
+  // 2. Fallback to Gemini if Google endpoint failed (skip when detectOnly is true)
+  if (!detectOnly && !translatedText && process.env.GEMINI_API_KEY) {
     try {
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({});
