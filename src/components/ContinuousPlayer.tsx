@@ -319,16 +319,10 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
               </div>
 
               {/* Active Word Original Language Pair Badge */}
-              <div
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-                  isLight
-                    ? 'bg-white border-slate-200 text-slate-600'
-                    : 'bg-slate-900/90 border-slate-800 text-slate-300'
-                }`}
-              >
-                <span>{currentItemSourceLang.flag} {currentItemSourceLang.name}</span>
-                <span className="opacity-60">→</span>
-                <span>{currentItemTargetLang.flag} {currentItemTargetLang.name}</span>
+              <div className="inline-flex flex-wrap items-center justify-center gap-1.5 px-3 py-1 rounded-lg bg-red-600 border border-red-700 text-[#ffffff] text-[11px] sm:text-xs font-bold tracking-wide shadow-sm max-w-full select-none">
+                <span>{currentItemSourceLang.name}</span>
+                <span className="opacity-90">→</span>
+                <span>{currentItemTargetLang.name}</span>
               </div>
 
               {/* Source word in bold font */}
