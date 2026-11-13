@@ -6,12 +6,10 @@ import {
   CheckCircle,
   Download,
   FileDown,
-  Edit2,
   Check,
-  X,
-  Play,
   Loader2,
   FolderDown,
+  Repeat,
 } from 'lucide-react';
 import { AudioSettings, VocabularyItem } from '../types.ts';
 import { speechService } from '../services/speechService.ts';
@@ -23,7 +21,7 @@ interface WordListTableProps {
   onDeleteItem: (id: string) => void;
   onClearAll?: () => void;
   onToggleMastered: (id: string) => void;
-  onUpdateItem: (id: string, sourceText: string, targetText: string) => void;
+  onUpdateSettings: (newSettings: Partial<AudioSettings>) => void;
   onPlayItem: (item: VocabularyItem) => void;
   theme?: 'dark' | 'light';
 }
@@ -34,22 +32,29 @@ export const WordListTable: React.FC<WordListTableProps> = ({
   onDeleteItem,
   onClearAll,
   onToggleMastered,
-  onUpdateItem,
+  onUpdateSettings,
   onPlayItem,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light';
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'learning' | 'mastered'>('all');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editSource, setEditSource] = useState('');
-  const [editTarget, setEditTarget] = useState('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [batchSuccess, setBatchSuccess] = useState(false);
 
   const sourceLang = getLanguageByCode(settings.sourceLang || 'en-US');
   const targetLang = getLanguageByCode(settings.targetLang || 'es-ES');
+
+  const is2x1x = (settings.sourceRepeats ?? 2) === 2 && (settings.targetRepeats ?? 1) === 1;
+
+  const handleToggleRepetitionPattern = () => {
+    if (is2x1x) {
+      onUpdateSettings({ sourceRepeats: 1, targetRepeats: 2 });
+    } else {
+      onUpdateSettings({ sourceRepeats: 2, targetRepeats: 1 });
+    }
+  };
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -64,22 +69,6 @@ export const WordListTable: React.FC<WordListTableProps> = ({
     if (filterType === 'mastered') return item.mastered;
     return true;
   });
-
-  const startEdit = (item: VocabularyItem) => {
-    setEditingId(item.id);
-    setEditSource(item.sourceText || item.english || '');
-    setEditTarget(item.targetText || item.arabic || '');
-  };
-
-  const saveEdit = (id: string) => {
-    if (!editSource.trim()) return;
-    onUpdateItem(id, editSource.trim(), editTarget.trim());
-    setEditingId(null);
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-  };
 
   // Export list as text file (word, translation)
   const handleExportText = () => {
@@ -342,7 +331,6 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                 </tr>
               ) : (
                 filteredItems.map((item, index) => {
-                  const isEditing = editingId === item.id;
                   const srcWord = item.sourceText || item.english || '';
                   const tgtWord = item.targetText || item.arabic || '';
                   const itemSourceLang = item.sourceLang ? getLanguageByCode(item.sourceLang) : sourceLang;
@@ -362,71 +350,37 @@ export const WordListTable: React.FC<WordListTableProps> = ({
 
                       {/* Source Word */}
                       <td className="py-2.5 px-2 md:py-3.5 md:px-4 min-w-0 break-words align-top md:align-middle">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editSource}
-                            onChange={(e) => setEditSource(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit(item.id);
-                              if (e.key === 'Escape') cancelEdit();
-                            }}
-                            className={`border rounded-lg px-2.5 py-1 text-sm w-full outline-none ${
-                              isLight
-                                ? 'bg-white border-[#1a73e8] text-slate-900'
-                                : 'bg-slate-950 border-indigo-500 text-white'
-                            }`}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-start gap-1">
-                            <span
-                              title={`${itemSourceLang.name} (${item.sourceVoice || itemSourceLang.defaultVoice})`}
-                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-[#ffffff] text-[10px] sm:text-[11px] font-bold tracking-wide leading-tight shadow-xs select-none"
-                            >
-                              {itemSourceLang.name}
+                        <div className="flex flex-col items-start gap-1">
+                          <span
+                            title={`${itemSourceLang.name} (${item.sourceVoice || itemSourceLang.defaultVoice})`}
+                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-[#ffffff] text-[10px] sm:text-[11px] font-bold tracking-wide leading-tight shadow-xs select-none"
+                          >
+                            {itemSourceLang.name}
+                          </span>
+                          <span className={`font-semibold text-sm md:text-base leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {srcWord}
+                          </span>
+                          {item.phonetic && (
+                            <span className="block text-[11px] text-slate-500 font-mono">
+                              {item.phonetic}
                             </span>
-                            <span className={`font-semibold text-sm md:text-base leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                              {srcWord}
-                            </span>
-                            {item.phonetic && (
-                              <span className="block text-[11px] text-slate-500 font-mono">
-                                {item.phonetic}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
 
                       {/* Target Translation */}
                       <td className="py-2.5 px-2 md:py-3.5 md:px-4 min-w-0 break-words align-top md:align-middle">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editTarget}
-                            onChange={(e) => setEditTarget(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit(item.id);
-                              if (e.key === 'Escape') cancelEdit();
-                            }}
-                            className={`border rounded-lg px-2.5 py-1 text-sm w-full outline-none ${
-                              isLight
-                                ? 'bg-white border-[#1a73e8] text-slate-900'
-                                : 'bg-slate-950 border-amber-500 text-white'
-                            }`}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-start gap-1">
-                            <span
-                              title={`${itemTargetLang.name} (${item.targetVoice || itemTargetLang.defaultVoice})`}
-                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-[#ffffff] text-[10px] sm:text-[11px] font-bold tracking-wide leading-tight shadow-xs select-none"
-                            >
-                              {itemTargetLang.name}
-                            </span>
-                            <span className={`font-medium text-xs sm:text-sm leading-snug ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
-                              {tgtWord || 'No translation provided'}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex flex-col items-start gap-1">
+                          <span
+                            title={`${itemTargetLang.name} (${item.targetVoice || itemTargetLang.defaultVoice})`}
+                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-600 text-[#ffffff] text-[10px] sm:text-[11px] font-bold tracking-wide leading-tight shadow-xs select-none"
+                          >
+                            {itemTargetLang.name}
+                          </span>
+                          <span className={`font-medium text-xs sm:text-sm leading-snug ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
+                            {tgtWord || 'No translation provided'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Mastered Status (Hidden on mobile < 768px so action icons fit cleanly without scrolling) */}
@@ -448,92 +402,90 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                         </button>
                       </td>
 
-                      {/* Actions (On mobile: Listen on top, Download/Edit/Delete wrapped underneath; On Tablet/Desktop: single horizontal row) */}
+                      {/* Actions (On mobile: Listen on top, Download/Repeat-Switch/Delete wrapped underneath; On Tablet/Desktop: single horizontal row) */}
                       <td className="py-2.5 px-2 md:py-3.5 md:px-4 text-right align-top md:align-middle">
-                        {isEditing ? (
-                          <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex flex-col items-end gap-1.5 md:flex-row md:items-center md:justify-end">
+                          {/* Individual Pronunciation Button */}
+                          <button
+                            onClick={() => onPlayItem(item)}
+                            className={`px-3 py-1.5 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap ${
+                              isLight
+                                ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
+                                : 'bg-gradient-to-r from-indigo-600/30 to-blue-600/20 hover:from-indigo-600/50 hover:to-blue-600/40 text-indigo-200 hover:text-white border-indigo-500/40'
+                            }`}
+                            title={
+                              is2x1x
+                                ? 'Pronounce this item separately (2x original + 1x translation)'
+                                : 'Pronounce this item separately (1x original + 2x translation)'
+                            }
+                          >
+                            <Volume2 className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-amber-400'}`} />
+                            <span>Listen</span>
+                          </button>
+
+                          <div className="flex items-center justify-end gap-1 md:gap-1.5">
+                            {/* Download Row MP3 (Kept Amber as Download Action) */}
                             <button
-                              onClick={() => saveEdit(item.id)}
-                              className={`p-1.5 rounded-lg cursor-pointer ${
-                                isLight ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white' : 'text-emerald-400 hover:bg-slate-800'
-                              }`}
-                              title="Save changes"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className={`p-1.5 rounded-lg cursor-pointer ${
-                                isLight ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white' : 'text-slate-400 hover:bg-slate-800'
-                              }`}
-                              title="Cancel"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-end gap-1.5 md:flex-row md:items-center md:justify-end">
-                            {/* Individual Pronunciation Button */}
-                            <button
-                              onClick={() => onPlayItem(item)}
-                              className={`px-3 py-1.5 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer whitespace-nowrap ${
+                              onClick={() => handleDownloadRow(item)}
+                              disabled={downloadingId === item.id}
+                              className={`keep-amber-btn p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
                                 isLight
-                                  ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8]'
-                                  : 'bg-gradient-to-r from-indigo-600/30 to-blue-600/20 hover:from-indigo-600/50 hover:to-blue-600/40 text-indigo-200 hover:text-white border-indigo-500/40'
+                                  ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-500 shadow-xs'
+                                  : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800 border-transparent'
                               }`}
-                              title="Pronounce this word separately (2x source + 1x target)"
+                              title="Download MP3 for this word"
                             >
-                              <Volume2 className={`w-3.5 h-3.5 ${isLight ? 'text-white' : 'text-amber-400'}`} />
-                              <span>Listen</span>
+                              {downloadingId === item.id ? (
+                                <Loader2 className={`w-3.5 h-3.5 md:w-4 md:h-4 animate-spin ${isLight ? 'text-slate-950' : 'text-amber-600'}`} />
+                              ) : (
+                                <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                              )}
                             </button>
 
-                            <div className="flex items-center justify-end gap-1 md:gap-1.5">
-                              {/* Download Row MP3 (Kept Amber as Download Action) */}
-                              <button
-                                onClick={() => handleDownloadRow(item)}
-                                disabled={downloadingId === item.id}
-                                className={`keep-amber-btn p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
-                                  isLight
-                                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-500 shadow-xs'
-                                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800 border-transparent'
-                                }`}
-                                title="Download MP3 for this word"
-                              >
-                                {downloadingId === item.id ? (
-                                  <Loader2 className={`w-3.5 h-3.5 md:w-4 md:h-4 animate-spin ${isLight ? 'text-slate-950' : 'text-amber-600'}`} />
-                                ) : (
-                                  <Download className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                )}
-                              </button>
-
-                              {/* Edit Button */}
-                              <button
-                                onClick={() => startEdit(item)}
-                                className={`p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
-                                  isLight
+                            {/* Repetition Mode Switch Icon Button (1x+2x ⇄ 2x+1x) */}
+                            <button
+                              type="button"
+                              onClick={handleToggleRepetitionPattern}
+                              className={`p-1.5 md:p-2 rounded-xl transition-all cursor-pointer border ${
+                                isLight
+                                  ? is2x1x
                                     ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white border-[#1a73e8] shadow-xs'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800 border-transparent'
-                                }`}
-                                title="Edit word"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-
-                              {/* Delete Button */}
-                              <button
-                                onClick={() => onDeleteItem(item.id)}
-                                className={`p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
+                                    : 'bg-[#174ea6] hover:bg-[#1557b0] text-white border-[#174ea6] ring-2 ring-[#8ab4f8] shadow-xs'
+                                  : is2x1x
+                                  ? 'bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border-indigo-700/70'
+                                  : 'bg-amber-950/80 hover:bg-amber-900 text-amber-300 border-amber-600/80'
+                              }`}
+                              title={
+                                is2x1x
+                                  ? 'Current: 2x Original + 1x Translation. Click to switch to: 1x Original + 2x Translation'
+                                  : 'Current: 1x Original + 2x Translation. Click to switch to: 2x Original + 1x Translation'
+                              }
+                            >
+                              <Repeat
+                                className={`w-3.5 h-3.5 ${
                                   isLight
-                                    ? 'bg-[#1a73e8] hover:bg-red-600 text-white border-[#1a73e8] hover:border-red-600 shadow-xs'
-                                    : 'text-slate-500 hover:text-red-400 hover:bg-slate-800 border-transparent'
+                                    ? 'text-white'
+                                    : is2x1x
+                                    ? 'text-indigo-300'
+                                    : 'text-amber-400'
                                 }`}
-                                title="Delete word"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                              />
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => onDeleteItem(item.id)}
+                              className={`p-1.5 md:p-2 rounded-xl transition-colors cursor-pointer border ${
+                                isLight
+                                  ? 'bg-[#1a73e8] hover:bg-red-600 text-white border-[#1a73e8] hover:border-red-600 shadow-xs'
+                                  : 'text-slate-500 hover:text-red-400 hover:bg-slate-800 border-transparent'
+                              }`}
+                              title="Delete word"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );
