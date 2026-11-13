@@ -326,6 +326,8 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                   const isEditing = editingId === item.id;
                   const srcWord = item.sourceText || item.english || '';
                   const tgtWord = item.targetText || item.arabic || '';
+                  const itemSourceLang = item.sourceLang ? getLanguageByCode(item.sourceLang) : sourceLang;
+                  const itemTargetLang = item.targetLang ? getLanguageByCode(item.targetLang) : targetLang;
 
                   return (
                     <tr
@@ -354,9 +356,17 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                           />
                         ) : (
                           <div>
-                            <span className={`font-semibold text-sm md:text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                              {srcWord}
-                            </span>
+                            <div className="flex items-start gap-1.5">
+                              <span
+                                title={`${itemSourceLang.name} (${item.sourceVoice || itemSourceLang.defaultVoice})`}
+                                className="text-xs sm:text-sm shrink-0 mt-0.5 select-none"
+                              >
+                                {itemSourceLang.flag}
+                              </span>
+                              <span className={`font-semibold text-sm md:text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                {srcWord}
+                              </span>
+                            </div>
                             {item.phonetic && (
                               <span className="block text-[11px] text-slate-500 font-mono">
                                 {item.phonetic}
@@ -380,9 +390,17 @@ export const WordListTable: React.FC<WordListTableProps> = ({
                             }`}
                           />
                         ) : (
-                          <span className={`font-medium text-xs sm:text-sm ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
-                            {tgtWord || 'No translation provided'}
-                          </span>
+                          <div className="flex items-start gap-1.5">
+                            <span
+                              title={`${itemTargetLang.name} (${item.targetVoice || itemTargetLang.defaultVoice})`}
+                              className="text-xs sm:text-sm shrink-0 mt-0.5 select-none"
+                            >
+                              {itemTargetLang.flag}
+                            </span>
+                            <span className={`font-medium text-xs sm:text-sm ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
+                              {tgtWord || 'No translation provided'}
+                            </span>
+                          </div>
                         )}
                       </td>
 

@@ -34,6 +34,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   const currentSourceLang = getLanguageByCode(settings.sourceLang || 'en-US');
   const currentTargetLang = getLanguageByCode(settings.targetLang || 'es-ES');
 
+  const activeSourceVoice = currentSourceLang.voices.some((v) => v.id === settings.sourceVoice)
+    ? (settings.sourceVoice as string)
+    : currentSourceLang.defaultVoice;
+  const activeTargetVoice = currentTargetLang.voices.some((v) => v.id === settings.targetVoice)
+    ? (settings.targetVoice as string)
+    : currentTargetLang.defaultVoice;
+
   // Filter languages across all 140+ world languages
   const filteredSourceLanguages = SUPPORTED_LANGUAGES.filter(
     (l) =>
@@ -74,9 +81,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   const handleSwap = () => {
     onUpdateSettings({
       sourceLang: currentTargetLang.code,
-      sourceVoice: currentTargetLang.defaultVoice,
+      sourceVoice: activeTargetVoice,
+      enGeminiVoice: activeTargetVoice,
       targetLang: currentSourceLang.code,
-      targetVoice: currentSourceLang.defaultVoice,
+      targetVoice: activeSourceVoice,
+      arGeminiVoice: activeSourceVoice,
     });
   };
 
@@ -550,7 +559,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             </span>
             <div className="flex items-center gap-1 min-w-0">
               <select
-                value={settings.sourceVoice || currentSourceLang.defaultVoice}
+                value={activeSourceVoice}
                 onChange={(e) =>
                   onUpdateSettings({
                     sourceVoice: e.target.value,
@@ -573,9 +582,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 type="button"
                 onClick={() => {
                   const currentVoice =
-                    currentSourceLang.voices.find(
-                      (v) => v.id === (settings.sourceVoice || currentSourceLang.defaultVoice)
-                    ) || currentSourceLang.voices[0];
+                    currentSourceLang.voices.find((v) => v.id === activeSourceVoice) ||
+                    currentSourceLang.voices[0];
                   handlePreviewVoice(
                     currentVoice.id,
                     currentVoice.samplePhrase,
@@ -602,7 +610,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             </span>
             <div className="flex items-center gap-1 min-w-0">
               <select
-                value={settings.targetVoice || currentTargetLang.defaultVoice}
+                value={activeTargetVoice}
                 onChange={(e) =>
                   onUpdateSettings({
                     targetVoice: e.target.value,
@@ -625,9 +633,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 type="button"
                 onClick={() => {
                   const currentVoice =
-                    currentTargetLang.voices.find(
-                      (v) => v.id === (settings.targetVoice || currentTargetLang.defaultVoice)
-                    ) || currentTargetLang.voices[0];
+                    currentTargetLang.voices.find((v) => v.id === activeTargetVoice) ||
+                    currentTargetLang.voices[0];
                   handlePreviewVoice(
                     currentVoice.id,
                     currentVoice.samplePhrase,
@@ -685,7 +692,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             {currentSourceLang.name} Voice:
           </span>
           <select
-            value={settings.sourceVoice || currentSourceLang.defaultVoice}
+            value={activeSourceVoice}
             onChange={(e) =>
               onUpdateSettings({
                 sourceVoice: e.target.value,
@@ -707,9 +714,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           <button
             onClick={() => {
               const currentVoice =
-                currentSourceLang.voices.find(
-                  (v) => v.id === (settings.sourceVoice || currentSourceLang.defaultVoice)
-                ) || currentSourceLang.voices[0];
+                currentSourceLang.voices.find((v) => v.id === activeSourceVoice) ||
+                currentSourceLang.voices[0];
               handlePreviewVoice(
                 currentVoice.id,
                 currentVoice.samplePhrase,
@@ -734,7 +740,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             {currentTargetLang.name} Voice:
           </span>
           <select
-            value={settings.targetVoice || currentTargetLang.defaultVoice}
+            value={activeTargetVoice}
             onChange={(e) =>
               onUpdateSettings({
                 targetVoice: e.target.value,
@@ -756,9 +762,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           <button
             onClick={() => {
               const currentVoice =
-                currentTargetLang.voices.find(
-                  (v) => v.id === (settings.targetVoice || currentTargetLang.defaultVoice)
-                ) || currentTargetLang.voices[0];
+                currentTargetLang.voices.find((v) => v.id === activeTargetVoice) ||
+                currentTargetLang.voices[0];
               handlePreviewVoice(
                 currentVoice.id,
                 currentVoice.samplePhrase,

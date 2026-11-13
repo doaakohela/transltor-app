@@ -100,15 +100,89 @@ export function resolveVoiceAndProsody(voice: string, lang?: string): VoiceConfi
   return { voiceName: 'en-US-GuyNeural', prosody: { pitch: '0Hz', rate: '0%' } };
 }
 
+function escapeXmlForSsml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function splitTextForTts(text: string, maxChars = 600): string[] {
+  const normalized = text.replace(/\r\n/g, '\n').trim();
+  if (!normalized) return [];
+  if (normalized.length <= maxChars) return [normalized];
+
+  const chunks: string[] = [];
+  // Split first by paragraphs/newlines, then sentences, then spaces
+  const paragraphs = normalized.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+
+  for (const para of paragraphs) {
+    if (para.length <= maxChars) {
+      chunks.push(para);
+      continue;
+    }
+
+    // Split on sentence delimiters keeping punctuation attached
+    const sentences = para.match(/[^.!?؟؛;。！？\n]+[.!?؟؛;。！？]*/g) || [para];
+    let current = '';
+
+    for (const rawSentence of sentences) {
+      const sentence = rawSentence.trim();
+      if (!sentence) continue;
+
+      if (sentence.length > maxChars) {
+        if (current) {
+          chunks.push(current.trim());
+          current = '';
+        }
+        // Further split overly long sentence by commas/clauses or words
+        const words = sentence.split(/\s+/);
+        let sub = '';
+        for (const word of words) {
+          if (word.length > maxChars) {
+            if (sub) {
+              chunks.push(sub.trim());
+              sub = '';
+            }
+            for (let i = 0; i < word.length; i += maxChars) {
+              chunks.push(word.slice(i, i + maxChars));
+            }
+          } else if ((sub + ' ' + word).trim().length > maxChars) {
+            if (sub) chunks.push(sub.trim());
+            sub = word;
+          } else {
+            sub = sub ? `${sub} ${word}` : word;
+          }
+        }
+        if (sub) chunks.push(sub.trim());
+      } else if ((current + ' ' + sentence).trim().length > maxChars) {
+        if (current) chunks.push(current.trim());
+        current = sentence;
+      } else {
+        current = current ? `${current} ${sentence}` : sentence;
+      }
+    }
+
+    if (current) {
+      chunks.push(current.trim());
+    }
+  }
+
+  return chunks.length > 0 ? chunks : [normalized];
+}
+
 async function executeTtsStream(
   text: string,
   voiceName: string,
   prosody?: { pitch?: string; rate?: string },
   cacheKey?: string
 ): Promise<Buffer> {
-  const tts = new MsEdgeTTS();
+  const tts = new MsEdgeTTS({ synthesisTimeoutMs: 90000 });
   await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
-  const result = await tts.toStream(text, prosody);
+  const safeSsmlText = escapeXmlForSsml(text);
+  const result = await tts.toStream(safeSsmlText, prosody);
   const chunks: Buffer[] = [];
 
   return new Promise((resolve, reject) => {
@@ -138,27 +212,68 @@ async function executeTtsStream(
   });
 }
 
+async function synthesizeChunkWithRetry(
+  chunkText: string,
+  voiceConfig: VoiceConfig
+): Promise<Buffer> {
+  try {
+    return await executeTtsStream(chunkText, voiceConfig.voiceName, voiceConfig.prosody);
+  } catch (firstErr) {
+    try {
+      return await executeTtsStream(chunkText, voiceConfig.voiceName, voiceConfig.prosody);
+    } catch {
+      throw firstErr;
+    }
+  }
+}
+
 /**
- * Generate Neural AI Audio for a single text phrase with prosody and resilient fallback
+ * Generate Neural AI Audio for any length text phrase with chunking, XML escaping & fallback
  */
 export async function generateSpeechAudio(
   text: string,
   voiceConfig: VoiceConfig
 ): Promise<Buffer> {
   const cleanText = text.trim();
+  if (!cleanText) return getValidMp3Silence(200);
+
   const cacheKey = `${voiceConfig.voiceName}_${voiceConfig.prosody?.pitch || ''}_${voiceConfig.prosody?.rate || ''}_${cleanText}`;
 
   if (ttsCache.has(cacheKey)) {
     return Buffer.from(ttsCache.get(cacheKey)!, 'base64');
   }
 
+  const textChunks = splitTextForTts(cleanText, 600);
+
   try {
-    return await executeTtsStream(cleanText, voiceConfig.voiceName, voiceConfig.prosody, cacheKey);
+    let fullBuffer: Buffer;
+    if (textChunks.length <= 1) {
+      fullBuffer = await synthesizeChunkWithRetry(cleanText, voiceConfig);
+    } else {
+      const audioBuffers = await mapConcurrent(textChunks, 3, async (chunk) => {
+        return synthesizeChunkWithRetry(chunk, voiceConfig);
+      });
+      fullBuffer = Buffer.concat(audioBuffers.filter((b) => b && b.length > 0));
+    }
+
+    if (fullBuffer.length > 0) {
+      ttsCache.set(cacheKey, fullBuffer.toString('base64'));
+      return fullBuffer;
+    }
+    throw new Error('Synthesized audio buffer was empty');
   } catch (err) {
     console.warn(`TTS generation with voice ${voiceConfig.voiceName} failed, trying fallback:`, err);
     if (voiceConfig.voiceName !== 'en-US-GuyNeural') {
       try {
-        return await executeTtsStream(cleanText, 'en-US-GuyNeural', { pitch: '0Hz', rate: '0%' }, cacheKey);
+        const fallbackConfig = { voiceName: 'en-US-GuyNeural', prosody: { pitch: '0Hz', rate: '0%' } };
+        const audioBuffers = await mapConcurrent(textChunks, 3, async (chunk) => {
+          return synthesizeChunkWithRetry(chunk, fallbackConfig);
+        });
+        const fullFallback = Buffer.concat(audioBuffers.filter((b) => b && b.length > 0));
+        if (fullFallback.length > 0) {
+          ttsCache.set(cacheKey, fullFallback.toString('base64'));
+          return fullFallback;
+        }
       } catch (fallbackErr) {
         console.warn('Fallback voice also failed:', fallbackErr);
       }
@@ -246,6 +361,10 @@ export interface BatchAudioParams {
     targetText?: string;
     english?: string;
     arabic?: string;
+    sourceVoice?: string;
+    targetVoice?: string;
+    sourceLang?: string;
+    targetLang?: string;
   }>;
   sourceVoice?: string;
   targetVoice?: string;
@@ -320,9 +439,17 @@ export async function generateBatchAudio(params: BatchAudioParams) {
     try {
       const chunks: Buffer[] = [];
 
+      // Resolve per-item voices cleanly (falls back to global batch voice if item has none)
+      const itemSrcConfig = it.sourceVoice
+        ? resolveVoiceAndProsody(it.sourceVoice, it.sourceLang)
+        : srcConfig;
+      const itemTgtConfig = it.targetVoice
+        ? resolveVoiceAndProsody(it.targetVoice, it.targetLang)
+        : tgtConfig;
+
       // Source repetitions
       if (src) {
-        const srcBuf = await generateSpeechAudio(src, srcConfig);
+        const srcBuf = await generateSpeechAudio(src, itemSrcConfig);
         for (let r = 0; r < srcReps; r++) {
           chunks.push(srcBuf);
           if (r < srcReps - 1) {
@@ -334,7 +461,7 @@ export async function generateBatchAudio(params: BatchAudioParams) {
       // Target repetitions
       if (tgt && tgtReps > 0) {
         if (src) chunks.push(silenceTgt);
-        const tgtBuf = await generateSpeechAudio(tgt, tgtConfig);
+        const tgtBuf = await generateSpeechAudio(tgt, itemTgtConfig);
         for (let t = 0; t < tgtReps; t++) {
           chunks.push(tgtBuf);
           if (t < tgtReps - 1) {

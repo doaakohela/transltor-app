@@ -9,6 +9,10 @@ export interface VocabularyItem {
   category?: string;
   notes?: string;
   mastered?: boolean;
+  sourceLang?: string;
+  targetLang?: string;
+  sourceVoice?: string;
+  targetVoice?: string;
   createdAt: number;
 }
 

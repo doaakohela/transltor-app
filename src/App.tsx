@@ -215,6 +215,10 @@ export default function App() {
             phonetic: item.phonetic,
             category: item.category,
             mastered: Boolean(item.mastered),
+            sourceLang: item.sourceLang,
+            targetLang: item.targetLang,
+            sourceVoice: item.sourceVoice,
+            targetVoice: item.targetVoice,
             createdAt: item.createdAt || Date.now(),
           }));
         }
@@ -337,9 +341,47 @@ export default function App() {
     }
   };
 
-  // Add a single word
-  const handleAddWord = (sourceText: string, targetText: string) => {
+  const resolveValidatedLanguagePair = (meta?: {
+    sourceLang?: string;
+    targetLang?: string;
+    sourceVoice?: string;
+    targetVoice?: string;
+  }) => {
+    const curSettings = settingsRef.current;
+    const srcLangObj = getLanguageByCode(meta?.sourceLang || curSettings.sourceLang || 'en-US');
+    const tgtLangObj = getLanguageByCode(meta?.targetLang || curSettings.targetLang || 'es-ES');
+
+    const candidateSrcVoice = meta?.sourceVoice || curSettings.sourceVoice || srcLangObj.defaultVoice;
+    const candidateTgtVoice = meta?.targetVoice || curSettings.targetVoice || tgtLangObj.defaultVoice;
+
+    const sourceVoice = srcLangObj.voices.some((v) => v.id === candidateSrcVoice)
+      ? candidateSrcVoice
+      : srcLangObj.defaultVoice;
+    const targetVoice = tgtLangObj.voices.some((v) => v.id === candidateTgtVoice)
+      ? candidateTgtVoice
+      : tgtLangObj.defaultVoice;
+
+    return {
+      sourceLang: srcLangObj.code,
+      targetLang: tgtLangObj.code,
+      sourceVoice,
+      targetVoice,
+    };
+  };
+
+  // Add a single word (persists its original source/target language & voice)
+  const handleAddWord = (
+    sourceText: string,
+    targetText: string,
+    meta?: {
+      sourceLang?: string;
+      targetLang?: string;
+      sourceVoice?: string;
+      targetVoice?: string;
+    }
+  ) => {
     if (!sourceText.trim()) return false;
+    const resolved = resolveValidatedLanguagePair(meta);
     const newItem: VocabularyItem = {
       id: 'w-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       sourceText: sourceText.trim(),
@@ -347,6 +389,10 @@ export default function App() {
       english: sourceText.trim(),
       arabic: targetText.trim(),
       mastered: false,
+      sourceLang: resolved.sourceLang,
+      targetLang: resolved.targetLang,
+      sourceVoice: resolved.sourceVoice,
+      targetVoice: resolved.targetVoice,
       createdAt: Date.now(),
     };
     setItems((prev) => [newItem, ...prev]);
@@ -358,15 +404,27 @@ export default function App() {
     newItems: Omit<VocabularyItem, 'id' | 'createdAt'>[],
     replaceExisting: boolean
   ) => {
-    const prepared: VocabularyItem[] = newItems.map((it, idx) => ({
-      id: 'bulk-' + Date.now() + '-' + idx,
-      sourceText: it.sourceText || it.english || '',
-      targetText: it.targetText || it.arabic || '',
-      english: it.sourceText || it.english || '',
-      arabic: it.targetText || it.arabic || '',
-      mastered: false,
-      createdAt: Date.now() + idx,
-    }));
+    const prepared: VocabularyItem[] = newItems.map((it, idx) => {
+      const resolved = resolveValidatedLanguagePair({
+        sourceLang: it.sourceLang,
+        targetLang: it.targetLang,
+        sourceVoice: it.sourceVoice,
+        targetVoice: it.targetVoice,
+      });
+      return {
+        id: 'bulk-' + Date.now() + '-' + idx,
+        sourceText: it.sourceText || it.english || '',
+        targetText: it.targetText || it.arabic || '',
+        english: it.sourceText || it.english || '',
+        arabic: it.targetText || it.arabic || '',
+        mastered: false,
+        sourceLang: resolved.sourceLang,
+        targetLang: resolved.targetLang,
+        sourceVoice: resolved.sourceVoice,
+        targetVoice: resolved.targetVoice,
+        createdAt: Date.now() + idx,
+      };
+    });
 
     if (replaceExisting) {
       setItems(prepared);
@@ -376,7 +434,7 @@ export default function App() {
     }
   };
 
-  // Load preset pack
+  // Load preset pack (English -> Arabic)
   const handleLoadPack = (packName: string) => {
     const pack = PRESET_PACKS.find((p) => p.name === packName);
     if (!pack) return;
@@ -388,6 +446,10 @@ export default function App() {
       english: it.english,
       arabic: it.arabic,
       mastered: false,
+      sourceLang: 'en-US',
+      targetLang: 'ar-EG',
+      sourceVoice: 'en-US-GuyNeural',
+      targetVoice: 'ar-EG-ShakirNeural',
       createdAt: Date.now() + idx,
     }));
 
@@ -650,6 +712,18 @@ export default function App() {
               onSetItems={setItems}
               sourceLangName={sourceLang.name}
               targetLangName={targetLang.name}
+              sourceLangCode={sourceLang.code}
+              targetLangCode={targetLang.code}
+              sourceVoice={
+                sourceLang.voices.some((v) => v.id === settings.sourceVoice)
+                  ? settings.sourceVoice
+                  : sourceLang.defaultVoice
+              }
+              targetVoice={
+                targetLang.voices.some((v) => v.id === settings.targetVoice)
+                  ? settings.targetVoice
+                  : targetLang.defaultVoice
+              }
               theme={theme}
             />
 

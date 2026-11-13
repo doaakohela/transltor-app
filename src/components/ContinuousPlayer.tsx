@@ -164,6 +164,8 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
 
   const sourceWord = currentItem.sourceText || currentItem.english || '';
   const targetWord = currentItem.targetText || currentItem.arabic || '';
+  const currentItemSourceLang = getLanguageByCode(currentItem.sourceLang || settings.sourceLang || 'en-US');
+  const currentItemTargetLang = getLanguageByCode(currentItem.targetLang || settings.targetLang || 'es-ES');
 
   const isSrc1Active = stage === 'source_1' || stage === 'en_1';
   const isSrc2Active = stage === 'source_2' || stage === 'en_2';
@@ -316,13 +318,26 @@ export const ContinuousPlayer: React.FC<ContinuousPlayerProps> = ({
                 )}
               </div>
 
+              {/* Active Word Original Language Pair Badge */}
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                  isLight
+                    ? 'bg-white border-slate-200 text-slate-600'
+                    : 'bg-slate-900/90 border-slate-800 text-slate-300'
+                }`}
+              >
+                <span>{currentItemSourceLang.flag} {currentItemSourceLang.name}</span>
+                <span className="opacity-60">→</span>
+                <span>{currentItemTargetLang.flag} {currentItemTargetLang.name}</span>
+              </div>
+
               {/* Source word in bold font */}
-              <h3 className={`text-2xl sm:text-3xl font-extrabold tracking-tight break-words ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <h3 className={`text-2xl sm:text-3xl font-extrabold tracking-tight break-words max-w-full ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {sourceWord}
               </h3>
 
               {/* Target translation */}
-              <p className={`text-base sm:text-lg font-semibold break-words ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
+              <p className={`text-base sm:text-lg font-semibold break-words max-w-full ${isLight ? 'text-[#1967d2]' : 'text-amber-300'}`}>
                 {targetWord || 'No translation'}
               </p>
             </div>

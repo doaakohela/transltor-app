@@ -34,12 +34,20 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   const currentSourceLang = getLanguageByCode(settings.sourceLang || 'en-US');
   const currentTargetLang = getLanguageByCode(settings.targetLang || 'es-ES');
 
+  const activeSourceVoice = currentSourceLang.voices.some((v) => v.id === settings.sourceVoice)
+    ? (settings.sourceVoice as string)
+    : currentSourceLang.defaultVoice;
+  const activeTargetVoice = currentTargetLang.voices.some((v) => v.id === settings.targetVoice)
+    ? (settings.targetVoice as string)
+    : currentTargetLang.defaultVoice;
+
   // Test Source Language
   const handleTestSource = async () => {
     if (testingSource) return;
     setTestingSource(true);
-    const voiceId = settings.sourceVoice || currentSourceLang.defaultVoice;
-    const voice = currentSourceLang.voices.find((v) => v.id === voiceId) || currentSourceLang.voices[0];
+    const voice =
+      currentSourceLang.voices.find((v) => v.id === activeSourceVoice) ||
+      currentSourceLang.voices[0];
     await speechService.speakText(
       voice.samplePhrase,
       currentSourceLang.code,
@@ -52,8 +60,9 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
   const handleTestTarget = async () => {
     if (testingTarget) return;
     setTestingTarget(true);
-    const voiceId = settings.targetVoice || currentTargetLang.defaultVoice;
-    const voice = currentTargetLang.voices.find((v) => v.id === voiceId) || currentTargetLang.voices[0];
+    const voice =
+      currentTargetLang.voices.find((v) => v.id === activeTargetVoice) ||
+      currentTargetLang.voices[0];
     await speechService.speakText(
       voice.samplePhrase,
       currentTargetLang.code,
@@ -191,8 +200,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
 
           <div className="space-y-2.5 max-h-72 overflow-y-auto pl-1">
             {currentSourceLang.voices.map((voice) => {
-              const isSelected =
-                (settings.sourceVoice || currentSourceLang.defaultVoice) === voice.id;
+              const isSelected = activeSourceVoice === voice.id;
               return (
                 <div
                   key={voice.id}
@@ -318,8 +326,7 @@ export const VoiceStudio: React.FC<VoiceStudioProps> = ({
 
           <div className="space-y-2.5 max-h-72 overflow-y-auto pl-1">
             {currentTargetLang.voices.map((voice) => {
-              const isSelected =
-                (settings.targetVoice || currentTargetLang.defaultVoice) === voice.id;
+              const isSelected = activeTargetVoice === voice.id;
               return (
                 <div
                   key={voice.id}

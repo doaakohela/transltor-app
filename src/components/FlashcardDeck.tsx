@@ -49,10 +49,24 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
   const cardIndexRef = useRef(cardIndex);
   cardIndexRef.current = cardIndex;
 
-  const sourceLang = getLanguageByCode(settings.sourceLang || 'en-US');
-  const targetLang = getLanguageByCode(settings.targetLang || 'es-ES');
-
   const currentItem = items[cardIndex] || items[0];
+  const sourceLang = getLanguageByCode(
+    (currentItem && currentItem.sourceLang) || settings.sourceLang || 'en-US'
+  );
+  const targetLang = getLanguageByCode(
+    (currentItem && currentItem.targetLang) || settings.targetLang || 'es-ES'
+  );
+  const activeItemSourceVoice =
+    (currentItem && currentItem.sourceVoice) ||
+    (currentItem && currentItem.sourceLang
+      ? sourceLang.defaultVoice
+      : settings.sourceVoice || sourceLang.defaultVoice);
+  const activeItemTargetVoice =
+    (currentItem && currentItem.targetVoice) ||
+    (currentItem && currentItem.targetLang
+      ? targetLang.defaultVoice
+      : settings.targetVoice || targetLang.defaultVoice);
+
   const sourceWord = currentItem ? currentItem.sourceText || currentItem.english || '' : '';
   const targetWord = currentItem ? currentItem.targetText || currentItem.arabic || '' : '';
 
@@ -449,7 +463,7 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({
                   speechService.speakText(
                     isFlipped ? targetWord : sourceWord,
                     isFlipped ? targetLang.code : sourceLang.code,
-                    isFlipped ? settings.targetVoice : settings.sourceVoice
+                    isFlipped ? activeItemTargetVoice : activeItemSourceVoice
                   );
                 }}
                 className={`p-2.5 rounded-xl transition-colors cursor-pointer border ${

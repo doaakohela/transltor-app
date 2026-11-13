@@ -1,4 +1,5 @@
 import { AudioSettings, PlaybackStage, VocabularyItem } from '../types.ts';
+import { getLanguageByCode } from '../data/languages.ts';
 
 export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -62,6 +63,7 @@ class SpeechService {
     if (this.sharedAudio) {
       this.sharedAudio.onended = null;
       this.sharedAudio.onerror = null;
+      this.sharedAudio.onloadedmetadata = null;
       try {
         this.sharedAudio.pause();
         this.sharedAudio.currentTime = 0;
@@ -106,8 +108,10 @@ class SpeechService {
       audio.volume = 1;
 
       let audioSrc: string;
+      let estimatedBytes = Math.ceil((base64.length * 3) / 4);
       try {
         const bin = atob(base64);
+        estimatedBytes = bin.length;
         const bytes = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) {
           bytes[i] = bin.charCodeAt(i);
@@ -130,16 +134,39 @@ class SpeechService {
 
       this.activeResolve = finish;
 
+      const scheduleSafetyTimeout = (ms: number) => {
+        if (this.activeTimeoutId !== null) {
+          window.clearTimeout(this.activeTimeoutId);
+        }
+        this.activeTimeoutId = window.setTimeout(() => {
+          if (finished) return;
+          // If the audio element is still actively playing toward a known duration, NEVER chop it off!
+          const hasFiniteDuration = Number.isFinite(audio.duration) && audio.duration > 0;
+          if (!audio.paused && !audio.ended && hasFiniteDuration && audio.currentTime < audio.duration - 0.5) {
+            const remainingMs = Math.max(10000, (audio.duration - audio.currentTime) * 1000 + 15000);
+            scheduleSafetyTimeout(remainingMs);
+            return;
+          }
+          finish();
+        }, ms);
+      };
+
+      audio.onloadedmetadata = () => {
+        if (!finished && Number.isFinite(audio.duration) && audio.duration > 0) {
+          // Dynamically size safety timer to full real duration + 25s cushion
+          scheduleSafetyTimeout(Math.ceil(audio.duration * 1000) + 25000);
+        }
+      };
+
       audio.onended = finish;
       audio.onerror = (e) => {
         console.warn('Audio playback error', e);
         finish();
       };
 
-      // Safety fallback in case a mobile browser drops onended
-      this.activeTimeoutId = window.setTimeout(() => {
-        finish();
-      }, 45000);
+      // Generous initial fallback estimated from MP3 byte length (~48kbps = ~6KB/sec) before metadata arrives
+      const initialFallbackMs = Math.max(120000, Math.ceil((estimatedBytes / 3500) * 1000) + 45000);
+      scheduleSafetyTimeout(initialFallbackMs);
 
       audio.src = audioSrc;
       try {
@@ -215,11 +242,29 @@ class SpeechService {
     await this.speakText(text, settings?.targetLang || 'ar-EG', voice);
   }
 
+  private resolveItemAudioParams(item: VocabularyItem, settings: AudioSettings) {
+    const sourceLang = item.sourceLang || settings.sourceLang || 'en-US';
+    const targetLang = item.targetLang || settings.targetLang || 'es-ES';
+
+    const sourceVoice =
+      item.sourceVoice ||
+      (item.sourceLang
+        ? getLanguageByCode(item.sourceLang).defaultVoice
+        : settings.sourceVoice || settings.enGeminiVoice || getLanguageByCode(sourceLang).defaultVoice);
+
+    const targetVoice =
+      item.targetVoice ||
+      (item.targetLang
+        ? getLanguageByCode(item.targetLang).defaultVoice
+        : settings.targetVoice || settings.arGeminiVoice || getLanguageByCode(targetLang).defaultVoice);
+
+    return { sourceLang, targetLang, sourceVoice, targetVoice };
+  }
+
   private getSequenceCacheKey(item: VocabularyItem, settings: AudioSettings): string {
     const sourceText = item.sourceText || item.english || '';
     const targetText = item.targetText || item.arabic || '';
-    const sourceVoice = settings.sourceVoice || settings.enGeminiVoice || 'en-US-GuyNeural';
-    const targetVoice = settings.targetVoice || settings.arGeminiVoice || 'es-ES-ElviraNeural';
+    const { sourceVoice, targetVoice } = this.resolveItemAudioParams(item, settings);
     const sourceRepeats = settings.sourceRepeats ?? 2;
     const targetRepeats = settings.targetRepeats ?? 1;
     const pauseSourceMs = settings.pauseBetweenSource ?? settings.pauseBetweenEn ?? 600;
@@ -239,8 +284,7 @@ class SpeechService {
 
     const sourceText = item.sourceText || item.english || '';
     const targetText = item.targetText || item.arabic || '';
-    const sourceVoice = settings.sourceVoice || settings.enGeminiVoice || 'en-US-GuyNeural';
-    const targetVoice = settings.targetVoice || settings.arGeminiVoice || 'es-ES-ElviraNeural';
+    const { sourceVoice, targetVoice } = this.resolveItemAudioParams(item, settings);
     const sourceRepeats = settings.sourceRepeats ?? 2;
     const targetRepeats = settings.targetRepeats ?? 1;
     const pauseSourceMs = settings.pauseBetweenSource ?? settings.pauseBetweenEn ?? 600;
@@ -328,7 +372,7 @@ class SpeechService {
     }
   }
 
-  // Offline Web Speech Fallback for full sequence
+  // Offline Web Speech Fallback for full sequence (using item's original languages!)
   private async playFallbackWebSpeechSequence(
     item: VocabularyItem,
     settings: AudioSettings,
@@ -337,13 +381,14 @@ class SpeechService {
     if (!('speechSynthesis' in window)) return false;
     const sourceText = item.sourceText || item.english || '';
     const targetText = item.targetText || item.arabic || '';
+    const { sourceLang, targetLang } = this.resolveItemAudioParams(item, settings);
     const sourceRepeats = settings.sourceRepeats ?? 2;
     const targetRepeats = settings.targetRepeats ?? 1;
 
     for (let i = 0; i < sourceRepeats; i++) {
       if (this.isCancelled) return false;
       onStageChange?.(i === 0 ? 'source_1' : 'source_2');
-      await this.speakUtterance(sourceText, settings.sourceLang || 'en-US');
+      await this.speakUtterance(sourceText, sourceLang);
       if (this.isCancelled) return false;
       await sleep(settings.pauseBetweenSource || 500);
     }
@@ -354,7 +399,7 @@ class SpeechService {
       for (let j = 0; j < targetRepeats; j++) {
         if (this.isCancelled) return false;
         onStageChange?.('target_1');
-        await this.speakUtterance(targetText, settings.targetLang || 'es-ES');
+        await this.speakUtterance(targetText, targetLang);
         if (this.isCancelled) return false;
         if (j < targetRepeats - 1) {
           await sleep(500);
@@ -366,53 +411,96 @@ class SpeechService {
     return !this.isCancelled;
   }
 
-  private speakUtterance(text: string, lang: string): Promise<void> {
-    return new Promise((resolve) => {
-      if (!('speechSynthesis' in window) || !text.trim() || this.isCancelled) {
-        resolve();
-        return;
-      }
+  private splitTextForWebSpeech(text: string, maxChars = 160): string[] {
+    const clean = text.trim();
+    if (!clean) return [];
+    if (clean.length <= maxChars) return [clean];
 
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // ignore
-      }
+    const sentences = clean.match(/[^.!?؟؛;。！？\n]+[.!?؟؛;。！？]*/g) || [clean];
+    const chunks: string[] = [];
+    let current = '';
 
-      // Small delay prevents Chrome/Safari from cancelling the new utterance right after .cancel()
-      window.setTimeout(() => {
-        if (this.isCancelled) {
-          resolve();
-          return;
+    for (const s of sentences) {
+      const part = s.trim();
+      if (!part) continue;
+      if (part.length > maxChars) {
+        if (current) {
+          chunks.push(current.trim());
+          current = '';
         }
-
-        const u = new SpeechSynthesisUtterance(text);
-        this.activeUtterance = u;
-        u.lang = lang;
-        u.rate = 0.95;
-
-        let settled = false;
-        const safetyMs = Math.max(4000, Math.min(18000, text.length * 180 + 2500));
-        const timerId = window.setTimeout(() => done(), safetyMs);
-
-        const done = () => {
-          if (settled) return;
-          settled = true;
-          window.clearTimeout(timerId);
-          this.activeUtterance = null;
-          resolve();
-        };
-
-        u.onend = done;
-        u.onerror = done;
-
-        try {
-          window.speechSynthesis.speak(u);
-        } catch {
-          done();
+        const words = part.split(/\s+/);
+        let sub = '';
+        for (const w of words) {
+          if ((sub + ' ' + w).trim().length > maxChars) {
+            if (sub) chunks.push(sub.trim());
+            sub = w;
+          } else {
+            sub = sub ? `${sub} ${w}` : w;
+          }
         }
-      }, 60);
-    });
+        if (sub) chunks.push(sub.trim());
+      } else if ((current + ' ' + part).trim().length > maxChars) {
+        if (current) chunks.push(current.trim());
+        current = part;
+      } else {
+        current = current ? `${current} ${part}` : part;
+      }
+    }
+    if (current) chunks.push(current.trim());
+    return chunks.length > 0 ? chunks : [clean];
+  }
+
+  private async speakUtterance(text: string, lang: string): Promise<void> {
+    if (!('speechSynthesis' in window) || !text.trim() || this.isCancelled) {
+      return;
+    }
+
+    try {
+      window.speechSynthesis.cancel();
+    } catch {
+      // ignore
+    }
+
+    const chunks = this.splitTextForWebSpeech(text, 160);
+    for (let idx = 0; idx < chunks.length; idx++) {
+      if (this.isCancelled) return;
+      const chunk = chunks[idx];
+      await new Promise<void>((resolve) => {
+        window.setTimeout(() => {
+          if (this.isCancelled) {
+            resolve();
+            return;
+          }
+
+          const u = new SpeechSynthesisUtterance(chunk);
+          this.activeUtterance = u;
+          u.lang = lang;
+          u.rate = 0.95;
+
+          let settled = false;
+          // Per-chunk generous timeout (never truncates long paragraphs across chunks)
+          const safetyMs = Math.max(8000, chunk.length * 240 + 4000);
+          const timerId = window.setTimeout(() => done(), safetyMs);
+
+          const done = () => {
+            if (settled) return;
+            settled = true;
+            window.clearTimeout(timerId);
+            this.activeUtterance = null;
+            resolve();
+          };
+
+          u.onend = done;
+          u.onerror = done;
+
+          try {
+            window.speechSynthesis.speak(u);
+          } catch {
+            done();
+          }
+        }, idx === 0 ? 60 : 25);
+      });
+    }
   }
 
   // Stop playback immediately
@@ -429,7 +517,7 @@ class SpeechService {
     }
   }
 
-  // Download sequence for single word
+  // Download sequence for single word (preserving item's own original voices)
   public async downloadSequenceAudio(
     item: VocabularyItem,
     settings: AudioSettings
@@ -437,8 +525,7 @@ class SpeechService {
     try {
       const sourceText = item.sourceText || item.english || '';
       const targetText = item.targetText || item.arabic || '';
-      const sourceVoice = settings.sourceVoice || settings.enGeminiVoice || 'en-US-GuyNeural';
-      const targetVoice = settings.targetVoice || settings.arGeminiVoice || 'es-ES-ElviraNeural';
+      const { sourceVoice, targetVoice } = this.resolveItemAudioParams(item, settings);
 
       const baseUrl = this.getBaseUrl();
       const response = await fetch(`${baseUrl}/api/tts/full-word`, {
@@ -474,8 +561,7 @@ class SpeechService {
   }
 
   // Batch download full playlist as a single master MP3 file
-  // Includes automatic resilient fallback: If serverless batch limits or 404 occurs,
-  // it automatically fetches single words and concatenates into one seamless MP3 in the browser!
+  // Includes per-item original voice/language retention + automatic resilient fallback!
   public async downloadBatchAudio(
     items: VocabularyItem[],
     settings: AudioSettings,
@@ -483,12 +569,19 @@ class SpeechService {
     customFilename?: string,
     onProgress?: (current: number, total: number, statusText: string) => void
   ): Promise<boolean> {
-    const itemsToExport = items.slice(0, maxCount).map((it) => ({
-      sourceText: it.sourceText || it.english,
-      targetText: it.targetText || it.arabic,
-      english: it.sourceText || it.english,
-      arabic: it.targetText || it.arabic,
-    }));
+    const itemsToExport = items.slice(0, maxCount).map((it) => {
+      const resolved = this.resolveItemAudioParams(it, settings);
+      return {
+        sourceText: it.sourceText || it.english,
+        targetText: it.targetText || it.arabic,
+        english: it.sourceText || it.english,
+        arabic: it.targetText || it.arabic,
+        sourceVoice: resolved.sourceVoice,
+        targetVoice: resolved.targetVoice,
+        sourceLang: resolved.sourceLang,
+        targetLang: resolved.targetLang,
+      };
+    });
 
     if (itemsToExport.length === 0) return false;
 
@@ -550,8 +643,8 @@ class SpeechService {
             body: JSON.stringify({
               sourceText: item.sourceText,
               targetText: item.targetText,
-              sourceVoice: settings.sourceVoice || 'en-US-GuyNeural',
-              targetVoice: settings.targetVoice || 'es-ES-ElviraNeural',
+              sourceVoice: item.sourceVoice,
+              targetVoice: item.targetVoice,
               sourceRepeats: settings.sourceRepeats ?? 2,
               targetRepeats: settings.targetRepeats ?? 1,
               pauseSourceMs: settings.pauseBetweenSource ?? 600,

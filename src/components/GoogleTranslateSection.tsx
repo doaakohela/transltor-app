@@ -20,10 +20,17 @@ import {
 import { AudioSettings } from '../types.ts';
 import { speechService } from '../services/speechService.ts';
 
+interface WordLangMeta {
+  sourceLang: string;
+  targetLang: string;
+  sourceVoice: string;
+  targetVoice: string;
+}
+
 interface GoogleTranslateSectionProps {
   settings: AudioSettings;
   onUpdateSettings: (newSettings: Partial<AudioSettings>) => void;
-  onAddWord: (sourceText: string, targetText: string) => boolean;
+  onAddWord: (sourceText: string, targetText: string, meta?: WordLangMeta) => boolean;
   theme?: 'dark' | 'light';
 }
 
@@ -53,7 +60,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
   const [sourceText, setSourceText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isAutoDetect, setIsAutoDetect] = useState(true);
-  const [detectedLangCode, setDetectedLangCode] = useState<string>('en-US');
+  const [detectedLangCode, setDetectedLangCode] = useState<string>(settings.sourceLang || 'en-US');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isPlayingSource, setIsPlayingSource] = useState(false);
   const [isPlayingTarget, setIsPlayingTarget] = useState(false);
@@ -68,11 +75,44 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastTranslatedKeyRef = useRef<string>('');
+  const autoDetectedUpdateRef = useRef<string | null>(null);
+  const prevSettingsSourceLangRef = useRef<string>(settings.sourceLang || 'en-US');
 
   const currentSourceLang = isAutoDetect
     ? getLanguageByCode(detectedLangCode)
     : getLanguageByCode(settings.sourceLang || 'en-US');
   const currentTargetLang = getLanguageByCode(settings.targetLang || 'es-ES');
+
+  const resolveActiveSourceVoice = () => {
+    const match = currentSourceLang.voices.find((v) => v.id === settings.sourceVoice);
+    return match ? match.id : currentSourceLang.defaultVoice;
+  };
+
+  const resolveActiveTargetVoice = () => {
+    const match = currentTargetLang.voices.find((v) => v.id === settings.targetVoice);
+    return match ? match.id : currentTargetLang.defaultVoice;
+  };
+
+  const activeSourceVoiceObj =
+    currentSourceLang.voices.find((v) => v.id === settings.sourceVoice) ||
+    currentSourceLang.voices[0];
+  const activeTargetVoiceObj =
+    currentTargetLang.voices.find((v) => v.id === settings.targetVoice) ||
+    currentTargetLang.voices[0];
+
+  // Sync top bar when bottom LanguageSelector changes sourceLang externally
+  useEffect(() => {
+    const incoming = settings.sourceLang || 'en-US';
+    if (incoming !== prevSettingsSourceLangRef.current) {
+      prevSettingsSourceLangRef.current = incoming;
+      if (autoDetectedUpdateRef.current === incoming) {
+        autoDetectedUpdateRef.current = null;
+      } else {
+        setDetectedLangCode(incoming);
+        setIsAutoDetect(false);
+      }
+    }
+  }, [settings.sourceLang]);
 
   // Focus search input whenever picker opens
   useEffect(() => {
@@ -93,6 +133,27 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activePicker]);
 
+  const applyDetectedLanguage = (rawCode: string) => {
+    const matchedLang = getLanguageByCode(rawCode);
+    const currentBase = (settings.sourceLang || 'en-US').split('-')[0].toLowerCase();
+    const detectedBase = matchedLang.code.split('-')[0].toLowerCase();
+
+    if (matchedLang.code !== detectedLangCode && currentBase !== detectedBase) {
+      setDetectedLangCode(matchedLang.code);
+    }
+
+    // Automatically sync global Voice Settings card below whenever auto-detect sees a different language
+    if (currentBase !== detectedBase) {
+      autoDetectedUpdateRef.current = matchedLang.code;
+      setDetectedLangCode(matchedLang.code);
+      onUpdateSettings({
+        sourceLang: matchedLang.code,
+        sourceVoice: matchedLang.defaultVoice,
+        enGeminiVoice: matchedLang.defaultVoice,
+      });
+    }
+  };
+
   // Trigger translation with multi-tier engine (Direct Google Translate + Server Proxy)
   const translateText = async (text: string, srcCode: string, tgtCode: string) => {
     const clean = text.trim();
@@ -107,7 +168,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     const tl = tgtCode.split('-')[0];
     const requestKey = `${clean}::${sl}::${tl}`;
 
-    // Skip if identical request is already completed
+    // Skip if identical request is already completed (prevents flicker & loops)
     if (requestKey === lastTranslatedKeyRef.current && translatedText) {
       setIsTranslating(false);
       return;
@@ -136,10 +197,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
             setTranslatedText(directTranslation);
             lastTranslatedKeyRef.current = requestKey;
             if (data[2] && isAutoDetect) {
-              const matchedLang = getLanguageByCode(data[2]);
-              if (matchedLang.code !== detectedLangCode) {
-                setDetectedLangCode(matchedLang.code);
-              }
+              applyDetectedLanguage(data[2]);
             }
             setIsTranslating(false);
             return;
@@ -172,10 +230,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
           lastTranslatedKeyRef.current = requestKey;
         }
         if (data.detectedLang && isAutoDetect) {
-          const matchedLang = getLanguageByCode(data.detectedLang);
-          if (matchedLang.code !== detectedLangCode) {
-            setDetectedLangCode(matchedLang.code);
-          }
+          applyDetectedLanguage(data.detectedLang);
         }
       }
     } catch (err: any) {
@@ -186,7 +241,7 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     }
   };
 
-  // Debounced translation on source text change (WITHOUT circular onUpdateSettings feedback loops)
+  // Debounced translation on source text / language change (without redundant re-fetches on auto-detect sync)
   useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -200,12 +255,22 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
       return;
     }
 
-    // Quick local script detection (updates local state without mutating parent settings on every keystroke)
+    // Quick local script detection sync
     if (isAutoDetect) {
       const detected = detectLanguageFromText(sourceText);
-      if (detected.code !== detectedLangCode) {
-        setDetectedLangCode(detected.code);
+      const currentBase = (settings.sourceLang || 'en-US').split('-')[0].toLowerCase();
+      const detectedBase = detected.code.split('-')[0].toLowerCase();
+      // Only sync script immediately for non-Latin scripts; Latin scripts let Google Translate confirm exact language
+      if (detected.script !== 'latin' && currentBase !== detectedBase) {
+        applyDetectedLanguage(detected.code);
       }
+    }
+
+    const sl = isAutoDetect ? 'auto' : (settings.sourceLang || 'en-US').split('-')[0];
+    const tl = (settings.targetLang || 'es-ES').split('-')[0];
+    const requestKey = `${clean}::${sl}::${tl}`;
+    if (requestKey === lastTranslatedKeyRef.current && translatedText) {
+      return;
     }
 
     debounceTimerRef.current = setTimeout(() => {
@@ -224,31 +289,41 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     }
     const oldSource = currentSourceLang.code;
     const oldTarget = currentTargetLang.code;
+    const newSourceVoice = resolveActiveTargetVoice();
+    const newTargetVoice = resolveActiveSourceVoice();
 
+    setDetectedLangCode(oldTarget);
     onUpdateSettings({
       sourceLang: oldTarget,
-      sourceVoice: currentTargetLang.defaultVoice,
+      sourceVoice: newSourceVoice,
+      enGeminiVoice: newSourceVoice,
       targetLang: oldSource,
-      targetVoice: currentSourceLang.defaultVoice,
+      targetVoice: newTargetVoice,
+      arGeminiVoice: newTargetVoice,
     });
 
+    lastTranslatedKeyRef.current = '';
     setSourceText(translatedText);
     setTranslatedText(sourceText);
   };
 
-  // Select language from picker
+  // Select language from top picker -> immediately updates global Voice Settings card too!
   const handleSelectLanguage = (langCode: string) => {
     const lang = getLanguageByCode(langCode);
+    lastTranslatedKeyRef.current = '';
     if (activePicker === 'source') {
       setIsAutoDetect(false);
+      setDetectedLangCode(lang.code);
       onUpdateSettings({
         sourceLang: lang.code,
         sourceVoice: lang.defaultVoice,
+        enGeminiVoice: lang.defaultVoice,
       });
     } else if (activePicker === 'target') {
       onUpdateSettings({
         targetLang: lang.code,
         targetVoice: lang.defaultVoice,
+        arGeminiVoice: lang.defaultVoice,
       });
     }
     setActivePicker(null);
@@ -259,7 +334,8 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     if (isPlayingSource || !sourceText.trim()) return;
     setIsPlayingSource(true);
     try {
-      const voice = settings.sourceVoice || currentSourceLang.defaultVoice;
+      speechService.unlockAudio();
+      const voice = resolveActiveSourceVoice();
       await speechService.speakText(sourceText.trim(), currentSourceLang.code, voice);
     } finally {
       setIsPlayingSource(false);
@@ -271,7 +347,8 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     if (isPlayingTarget || !translatedText.trim()) return;
     setIsPlayingTarget(true);
     try {
-      const voice = settings.targetVoice || currentTargetLang.defaultVoice;
+      speechService.unlockAudio();
+      const voice = resolveActiveTargetVoice();
       await speechService.speakText(translatedText.trim(), currentTargetLang.code, voice);
     } finally {
       setIsPlayingTarget(false);
@@ -286,10 +363,15 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
     setTimeout(() => setCopiedTarget(false), 2000);
   };
 
-  // Add translated word to vocabulary list
+  // Add translated word to vocabulary list WITH exact current source/target languages and voices!
   const handleAddToVocab = () => {
     if (!sourceText.trim()) return;
-    const ok = onAddWord(sourceText.trim(), translatedText.trim());
+    const ok = onAddWord(sourceText.trim(), translatedText.trim(), {
+      sourceLang: currentSourceLang.code,
+      targetLang: currentTargetLang.code,
+      sourceVoice: resolveActiveSourceVoice(),
+      targetVoice: resolveActiveTargetVoice(),
+    });
     if (ok) {
       setAddedSuccess(true);
       setTimeout(() => setAddedSuccess(false), 2500);
@@ -769,8 +851,8 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                   <Volume2 className="w-5 h-5" />
                 )}
               </button>
-              <span className={`text-[11px] ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
-                Voice: {currentSourceLang.voices[0]?.name.split(' - ')[0] || 'Default'}
+              <span className={`text-[11px] truncate max-w-[160px] sm:max-w-[240px] ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
+                Voice: {activeSourceVoiceObj?.name.split(' - ')[0] || 'Default'}
               </span>
             </div>
 
@@ -876,6 +958,10 @@ export const GoogleTranslateSection: React.FC<GoogleTranslateSectionProps> = ({
                   <Copy className="w-4 h-4" />
                 )}
               </button>
+
+              <span className={`hidden sm:inline text-[11px] truncate max-w-[180px] ${isLight ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
+                Voice: {activeTargetVoiceObj?.name.split(' - ')[0] || 'Default'}
+              </span>
             </div>
 
             {/* Quick Add to Vocabulary List (Amber/Orange matching Import & Download buttons in Day & Night modes) */}

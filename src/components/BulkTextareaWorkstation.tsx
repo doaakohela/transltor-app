@@ -18,6 +18,10 @@ interface BulkTextareaWorkstationProps {
   onSetItems: (items: VocabularyItem[]) => void;
   sourceLangName: string;
   targetLangName: string;
+  sourceLangCode?: string;
+  targetLangCode?: string;
+  sourceVoice?: string;
+  targetVoice?: string;
   theme?: 'dark' | 'light';
 }
 
@@ -42,6 +46,10 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
   onSetItems,
   sourceLangName,
   targetLangName,
+  sourceLangCode = 'en-US',
+  targetLangCode = 'es-ES',
+  sourceVoice,
+  targetVoice,
   theme = 'dark',
 }) => {
   const isLight = theme === 'light';
@@ -60,7 +68,7 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isTypingRef = useRef(false);
 
-  // Sync rawText ONLY when items change externally (e.g. from Google Translate or Preset load)
+  // Sync rawText cleanly when items change externally (e.g. from Google Translate add/delete/preset)
   useEffect(() => {
     // If the user is actively typing in the textarea, NEVER overwrite rawText!
     if (isTypingRef.current) return;
@@ -73,31 +81,60 @@ export const BulkTextareaWorkstation: React.FC<BulkTextareaWorkstationProps> = (
       })
       .join('\n');
 
-    // Only update if rawText is empty or completely out of sync
-    if (items.length > 0 && !rawText.trim()) {
+    const currentParsedSerialized = rawText
+      .split('\n')
+      .map((line) => parseUniversalLine(line))
+      .filter((p): p is { sourceText: string; targetText: string } => Boolean(p && p.sourceText))
+      .map((p) => (p.targetText ? `${p.sourceText}\t${p.targetText}` : p.sourceText))
+      .join('\n');
+
+    if (serialized !== currentParsedSerialized) {
       setRawText(serialized);
     }
   }, [items]);
 
-  // Handle live textarea change with intelligent parsing
+  // Handle live textarea change with intelligent parsing while preserving existing items' original language & voice
   const handleTextChange = (newText: string) => {
     isTypingRef.current = true;
     setRawText(newText);
     const lines = newText.split('\n');
+
+    const existingBuckets = new Map<string, VocabularyItem[]>();
+    items.forEach((it) => {
+      const s = (it.sourceText || it.english || '').trim();
+      const t = (it.targetText || it.arabic || '').trim();
+      const key = `${s}||${t}`;
+      const bucket = existingBuckets.get(key) || [];
+      bucket.push(it);
+      existingBuckets.set(key, bucket);
+    });
+
     const newItems: VocabularyItem[] = [];
 
     lines.forEach((line) => {
       const parsed = parseUniversalLine(line);
       if (parsed && parsed.sourceText) {
-        newItems.push({
-          id: 'w-' + Math.random().toString(36).substring(2, 9),
-          sourceText: parsed.sourceText,
-          targetText: parsed.targetText || '',
-          english: parsed.sourceText,
-          arabic: parsed.targetText || '',
-          mastered: false,
-          createdAt: Date.now(),
-        });
+        const key = `${parsed.sourceText.trim()}||${(parsed.targetText || '').trim()}`;
+        const bucket = existingBuckets.get(key);
+        const existingMatch = bucket && bucket.length > 0 ? bucket.shift() : undefined;
+
+        if (existingMatch) {
+          newItems.push(existingMatch);
+        } else {
+          newItems.push({
+            id: 'w-' + Math.random().toString(36).substring(2, 9),
+            sourceText: parsed.sourceText,
+            targetText: parsed.targetText || '',
+            english: parsed.sourceText,
+            arabic: parsed.targetText || '',
+            mastered: false,
+            sourceLang: sourceLangCode,
+            targetLang: targetLangCode,
+            sourceVoice,
+            targetVoice,
+            createdAt: Date.now(),
+          });
+        }
       }
     });
 
